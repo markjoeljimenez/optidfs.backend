@@ -10,8 +10,8 @@ from draft_kings.data import Sport as SportAPI
 from draft_kings.client import contests
 
 app = Flask(__name__)
-CORS(app, support_credentials=True)
-api = Api(app)
+# CORS(app, support_credentials=True)
+# api = Api(app)
 
 def merge_two_dicts(x, y):
     z = x.copy()   # start with x's keys and values
