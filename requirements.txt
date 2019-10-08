@@ -3,4 +3,4 @@ Flask==1.1.1
 Flask-Cors==3.0.8
 Flask-RESTful==0.3.7
 jsonpickle==1.2
-git+https://github.com/markjoeljimenez/draftkings-optimizer.backend.git
+git+git://github.com/markjoeljimenez/draftkings-optimizer.backend.git
