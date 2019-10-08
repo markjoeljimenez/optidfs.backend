@@ -51,6 +51,8 @@ def optimize():
 
     players = transformPlayers(response.json()["draftables"])
 
+    print(players)
+
     optimizer = get_optimizer(Site.DRAFTKINGS, Sport.BASKETBALL)
     optimizer.load_players(players)
 
