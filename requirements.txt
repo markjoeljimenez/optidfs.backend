@@ -16,7 +16,7 @@ lazy-object-proxy==1.4.2
 MarkupSafe==1.1.1
 mccabe==0.6.1
 PuLP==1.6.10
-git+https://github.com/markjoeljimenez/pydfs_lineup_optimizer.backend.git
+git+https://github.com/markjoeljimenez/draftkings-optimizer.backend.git
 pylint==2.3.1
 pyparsing==2.4.2
 python-dateutil==2.8.0
