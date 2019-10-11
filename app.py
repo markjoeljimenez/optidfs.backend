@@ -26,7 +26,6 @@ def transformPlayers(players):
     for player in players:
         fppg = player["draftStatAttributes"][0]["value"]
         status = True if player["status"] == "O" else False
-        # print(status)
 
         playerList.append(Player(
             player["playerId"],
@@ -39,12 +38,19 @@ def transformPlayers(players):
             status
         ))
 
-
     return playerList
 
 @app.route('/')
 def get_contests():
     return jsonpickle.encode(contests(sport=SportAPI.NBA))
+
+@app.route('/get-players')
+def get_players():
+    draftId = request.args.get('id')
+
+    response = requests.get('https://api.draftkings.com/draftgroups/v1/draftgroups/%s/draftables?format=json' % (draftId))
+
+    return json.dumps(response.json()["draftables"])
 
 @app.route('/optimize')
 def optimize():
@@ -57,7 +63,7 @@ def optimize():
     optimizer = get_optimizer(Site.DRAFTKINGS, Sport.BASKETBALL)
     optimizer.load_players(players)
 
-    optimize = optimizer.optimize(1)
+    optimize = optimizer.optimize(3)
 
     success = {
         "success": True,
