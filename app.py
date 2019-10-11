@@ -25,6 +25,8 @@ def transformPlayers(players):
 
     for player in players:
         fppg = player["draftStatAttributes"][0]["value"]
+        status = True if player["status"] == "O" else False
+        # print(status)
 
         playerList.append(Player(
             player["playerId"],
@@ -33,7 +35,8 @@ def transformPlayers(players):
             [ player["position"] ],
             player["teamAbbreviation"],
             float(player["salary"]),
-            0 if re.search('[a-zA-Z]', fppg) else float(fppg)
+            0 if re.search('[a-zA-Z]', fppg) else float(fppg),
+            status
         ))
 
 
