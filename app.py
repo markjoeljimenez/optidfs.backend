@@ -13,10 +13,12 @@ app = Flask(__name__)
 CORS(app, support_credentials=True)
 api = Api(app)
 
+
 def merge_two_dicts(x, y):
     z = x.copy()   # start with x's keys and values
     z.update(y)    # modifies z with y's keys and values & returns None
     return z
+
 
 def transformPlayers(players):
     players = list(filter(lambda player: player["draftStatAttributes"][0]["value"] not in ['-'], players))
@@ -35,14 +37,18 @@ def transformPlayers(players):
             player["teamAbbreviation"],
             float(player["salary"]),
             0 if re.search('[a-zA-Z]', fppg) else float(fppg),
-            status
+            status,
+            None,
+            None
         ))
 
     return playerList
 
+
 @app.route('/')
 def get_contests():
     return jsonpickle.encode(contests(sport=SportAPI.NBA))
+
 
 @app.route('/get-players')
 def get_players():
@@ -52,9 +58,11 @@ def get_players():
 
     return json.dumps(response.json()["draftables"])
 
+
 @app.route('/optimize')
 def optimize():
     draftId = request.args.get('id')
+    lockedPlayers = request.args.get('locked')
 
     response = requests.get('https://api.draftkings.com/draftgroups/v1/draftgroups/%s/draftables?format=json' % (draftId))
 
@@ -63,7 +71,13 @@ def optimize():
     optimizer = get_optimizer(Site.DRAFTKINGS, Sport.BASKETBALL)
     optimizer.load_players(players)
 
-    optimize = optimizer.optimize(3)
+    print(lockedPlayers)
+    if lockedPlayers != None:
+        player = optimizer.get_player_by_id(int(lockedPlayers))
+
+        optimizer.add_player_to_lineup(player)
+
+    optimize = optimizer.optimize(1)
 
     success = {
         "success": True,
