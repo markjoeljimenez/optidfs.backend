@@ -33,8 +33,7 @@ def transformPlayers(players):
     players = list(filter(lambda player: player["draftStatAttributes"][0]["value"] not in ['-'], players))
     for player in players:
         fppg = player["draftStatAttributes"][0]["value"]
-        status = True if player["status"] == "O" else False
-        # print(transformPositions(player["position"]))
+        is_injured = True if player["status"] == "O" else False
         playerList.append(Player(
             player["playerId"],
             player["firstName"],
@@ -43,7 +42,8 @@ def transformPlayers(players):
             player["teamAbbreviation"],
             float(player["salary"]),
             0 if re.search('[a-zA-Z]', fppg) else float(fppg),
-            status,
+            is_injured,
+            player["status"] if player["status"] != "O" else None,
             None,
             None
         ))
