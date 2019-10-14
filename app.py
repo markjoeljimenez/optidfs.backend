@@ -12,28 +12,21 @@ from draft_kings.client import contests, available_players, draftables, draft_gr
 app = Flask(__name__)
 CORS(app, support_credentials=True)
 api = Api(app)
+draftables = None
 
 def merge_two_dicts(x, y):
     z = x.copy()   # start with x's keys and values
     z.update(y)    # modifies z with y's keys and values & returns None
     return z
 
-def transformPositions(pos):
-    if "G" in pos:
-        return 'PG/SG/G/UTIL'
-    elif "F" in pos:
-        return 'PF/SF/F/UTIL'
-    elif "C" in pos:
-        return 'C/UTIL'
-    else:
-        return pos
-
 def transformPlayers(players):
     playerList = []
     players = list(filter(lambda player: player["draftStatAttributes"][0]["value"] not in ['-'], players))
+
     for player in players:
         fppg = player["draftStatAttributes"][0]["value"]
         is_injured = True if player["status"] == "O" else False
+
         playerList.append(Player(
             player["playerId"],
             player["firstName"],
@@ -44,39 +37,44 @@ def transformPlayers(players):
             0 if re.search('[a-zA-Z]', fppg) else float(fppg),
             is_injured,
             player["status"] if player["status"] != "O" else None,
-            None,
-            None
+            False
         ))
+
     return playerList
 
 @app.route('/')
 def get_contests():
     return jsonpickle.encode(contests(sport=SportAPI.NBA))
 
-@app.route('/')
-
-@app.route('/get-players')
+@app.route('/players')
 def get_players():
-    draftId = request.args.get('id')
-    response = requests.get('https://api.draftkings.com/draftgroups/v1/draftgroups/%s/draftables?format=json' % (draftId))
-    # print(draft_group_details(draft_group_id=draftId))
-    return json.dumps(response.json()["draftables"])
+    global draftables
 
-@app.route('/optimize')
-def optimize():
     draftId = request.args.get('id')
-    lockedPlayers = request.args.get('locked')
     response = requests.get('https://api.draftkings.com/draftgroups/v1/draftgroups/%s/draftables?format=json' % (draftId))
-    players = transformPlayers(response.json()["draftables"])
+    draftables = response.json()["draftables"]
+
+    return json.dumps(draftables)
+
+@app.route('/optimize', methods=['GET', 'POST'])
+def optimize():
+    global draftables
+   
+    players = transformPlayers(draftables)
     optimizer = get_optimizer(Site.DRAFTKINGS, Sport.BASKETBALL)
     optimizer.load_players(players)
-    if lockedPlayers != None:
-        player = optimizer.get_player_by_id(int(lockedPlayers))
+
+    if request.json["locked"] != None:
+        player = optimizer.get_player_by_id(int(request.json["locked"]))
+        player.is_locked = True
+        print(player.is_locked)
         optimizer.add_player_to_lineup(player)
+
     success = {
         "success": True,
         "message": None
     }
+
     try:
         optimize = optimizer.optimize(1)
         # for lineup in optimize: 
