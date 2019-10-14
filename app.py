@@ -59,16 +59,18 @@ def get_players():
 @app.route('/optimize', methods=['GET', 'POST'])
 def optimize():
     global draftables
+
+    lockedPlayers = request.json["locked"]
    
     players = transformPlayers(draftables)
     optimizer = get_optimizer(Site.DRAFTKINGS, Sport.BASKETBALL)
     optimizer.load_players(players)
 
-    if request.json["locked"] != None:
-        player = optimizer.get_player_by_id(int(request.json["locked"]))
-        player.is_locked = True
-        print(player.is_locked)
-        optimizer.add_player_to_lineup(player)
+    if lockedPlayers != None:
+        for lockedPlayer in lockedPlayers:
+            player = optimizer.get_player_by_id(lockedPlayer)
+            player.is_locked = True
+            optimizer.add_player_to_lineup(player)
 
     success = {
         "success": True,
