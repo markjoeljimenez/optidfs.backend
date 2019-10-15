@@ -66,25 +66,28 @@ def optimize():
     optimizer = get_optimizer(Site.DRAFTKINGS, Sport.BASKETBALL)
     optimizer.load_players(players)
 
-    if lockedPlayers != None:
-        for lockedPlayer in lockedPlayers:
-            player = optimizer.get_player_by_id(lockedPlayer)
-            player.is_locked = True
-            optimizer.add_player_to_lineup(player)
-
-    success = {
+    response = {
         "success": True,
         "message": None
     }
 
+    if lockedPlayers != None:
+        for lockedPlayer in lockedPlayers:
+            try:
+                player = optimizer.get_player_by_id(lockedPlayer)
+                player.is_locked = True
+                optimizer.add_player_to_lineup(player)
+            except LineupOptimizerException as exception:
+                response["success"] = False
+                response["message"] = exception.message
+                return response
+
     try:
         optimize = optimizer.optimize(1)
-        # for lineup in optimize: 
-        #     print(lineup)
         exporter = JSONLineupExporter(optimize)
         exportedJSON = exporter.export()
-        return merge_two_dicts(exportedJSON, success)
+        return merge_two_dicts(exportedJSON, response)
     except LineupOptimizerException as exception:
-        success["success"] = False
-        success["message"] = exception.message
-        return success
+        response["success"] = False
+        response["message"] = exception.message
+        return response
