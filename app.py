@@ -37,7 +37,7 @@ def transformPlayers(players):
             0 if re.search('[a-zA-Z]', fppg) else float(fppg),
             is_injured,
             player["status"] if player["status"] != "O" else None,
-            False
+            # False
         ))
 
     return playerList
