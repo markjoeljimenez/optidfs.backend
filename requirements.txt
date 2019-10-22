@@ -3,7 +3,7 @@ astroid==2.2.5
 certifi==2019.6.16
 chardet==3.0.4
 Click==7.0
-draft-kings==2.0.1
+git+https://github.com/markjoeljimenez/draftkings_client.git
 Flask==1.1.1
 Flask-Cors==3.0.8
 Flask-RESTful==0.3.7

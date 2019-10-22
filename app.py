@@ -19,28 +19,23 @@ def merge_two_dicts(x, y):
     z.update(y)    # modifies z with y's keys and values & returns None
     return z
 
-def transformPlayers(players):
-    playerList = []
-    players = list(filter(lambda player: player["draftStatAttributes"][0]["value"] not in ['-'], players))
+def transform_player(player):
+    # is_injured = True if player["status"] == "O" else False
 
-    for player in players:
-        fppg = player["draftStatAttributes"][0]["value"]
-        is_injured = True if player["status"] == "O" else False
+    player = Player(
+        player["id"],
+        player["first_name"],
+        player["last_name"],
+        player["position"]["name"].split('/'),
+        "",
+        player["draft"]["salary"],
+        player["points_per_contest"],
+        False,
+        player["status"] if player["status"] != "O" else None,
+        # False
+    )
 
-        playerList.append(Player(
-            player["playerId"],
-            player["firstName"],
-            player["lastName"],
-            player["position"].split('/'),
-            player["teamAbbreviation"],
-            float(player["salary"]),
-            0 if re.search('[a-zA-Z]', fppg) else float(fppg),
-            is_injured,
-            player["status"] if player["status"] != "O" else None,
-            # False
-        ))
-
-    return playerList
+    return player
 
 @app.route('/')
 def get_contests():
@@ -51,18 +46,18 @@ def get_players():
     global draftables
 
     draftId = request.args.get('id')
-    response = requests.get('https://api.draftkings.com/draftgroups/v1/draftgroups/%s/draftables?format=json' % (draftId))
-    draftables = response.json()["draftables"]
+    draftables = available_players(draftId)
 
-    return json.dumps(draftables)
+    return draftables
 
 @app.route('/optimize', methods=['GET', 'POST'])
 def optimize():
     global draftables
 
     lockedPlayers = request.json["locked"]
-   
-    players = transformPlayers(draftables)
+    excludedPlayers = request.json["excluded"]
+
+    players = [transform_player(player) for player in draftables["players"]]
     optimizer = get_optimizer(Site.DRAFTKINGS, Sport.BASKETBALL)
     optimizer.load_players(players)
 
@@ -75,8 +70,17 @@ def optimize():
         for lockedPlayer in lockedPlayers:
             try:
                 player = optimizer.get_player_by_id(lockedPlayer)
-                player.is_locked = True
                 optimizer.add_player_to_lineup(player)
+            except LineupOptimizerException as exception:
+                response["success"] = False
+                response["message"] = exception.message
+                return response
+
+    if excludedPlayers != None:
+        for excludedPlayer in excludedPlayers:
+            try:
+                player = optimizer.get_player_by_id(excludedPlayer)
+                optimizer.remove_player(player)
             except LineupOptimizerException as exception:
                 response["success"] = False
                 response["message"] = exception.message
