@@ -20,7 +20,7 @@ def merge_two_dicts(x, y):
     return z
 
 def transform_player(player):
-    # is_injured = True if player["status"] == "O" else False
+    is_injured = True if player["status"] == "O" else False
 
     player = Player(
         player["id"],
@@ -30,7 +30,7 @@ def transform_player(player):
         "",
         player["draft"]["salary"],
         player["points_per_contest"],
-        False,
+        is_injured,
         player["status"] if player["status"] != "O" else None,
         # False
     )
