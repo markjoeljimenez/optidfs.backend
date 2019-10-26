@@ -27,7 +27,7 @@ def transform_player(player):
         player["first_name"],
         player["last_name"],
         player["position"]["name"].split('/'),
-        player["team"],
+        player["team_id"],
         player["draft"]["salary"],
         player["points_per_contest"],
         is_injured,
