@@ -47,3 +47,12 @@
        git commit -am "{COMMIT}"
        git push heroku master
    ```
+
+## Clear Heroku cache
+
+```cli
+    heroku plugins:install heroku-repo
+    heroku repo:purge_cache -a evening-brushlands-00691
+    git commit --allow-empty -m "Purge cache"
+    git push heroku master
+```
