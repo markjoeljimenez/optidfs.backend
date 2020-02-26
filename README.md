@@ -42,8 +42,8 @@
 2. Clone repo to Heroku
 
    ```cli
-       heroku git:clone -a evening-brushlands-00691
-       cd evening-brushlands-00691
+       heroku git:clone -a draftkings-optimizer
+       cd draftkings-optimizer
    ```
 
 3. Deploy
@@ -58,7 +58,7 @@
 
 ```cli
     heroku plugins:install heroku-repo
-    heroku repo:purge_cache -a evening-brushlands-00691
+    heroku repo:purge_cache -a draftkings-optimizer
     git commit --allow-empty -m "Purge cache"
     git push heroku master
 ```
