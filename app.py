@@ -43,7 +43,7 @@ def get_contests():
 	with sqlite3.connect("players.db") as conn:
 		c = conn.cursor()
 
-		c.execute("DROP TABLE players")
+		c.execute("DROP TABLE IF EXISTS players")
 
 		c.execute("""CREATE TABLE players (
 				id integer,
