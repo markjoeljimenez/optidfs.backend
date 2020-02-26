@@ -16,144 +16,118 @@ api = Api(app)
 
 
 def merge_two_dicts(x, y):
-    z = x.copy()   # start with x"s keys and values
-    z.update(y)    # modifies z with y"s keys and values & returns None
-    return z
+	z = x.copy()   # start with x"s keys and values
+	z.update(y)    # modifies z with y"s keys and values & returns None
+	return z
 
 
 def transform_player(player):
-    player = Player(
-        player["id"],
-        player["first_name"],
-        player["last_name"],
-        player["position"]["name"].split("/"),
-        player["team"],
-        player["draft"]["salary"],
-        player["points_per_contest"],
-        # True if player["status"] == "O" else False,
-        player["status"] if player["status"] != "O" else None,
-        # False
-    )
+	player = Player(
+		player[0],
+		player[1],
+		player[2],
+		player[3].split("/"),
+		player[4],
+		player[5],
+		player[6],
+		# True if player["status"] == "O" else False,
+		# player[7] if player[7] != "O" else None,
+		None
+		# False
+	)
 
-    return player
+	return player
 
 
 @app.route("/")
 def get_contests():
-    with sqlite3.connect("players.db") as conn:
-        c = conn.cursor()
+	with sqlite3.connect("players.db") as conn:
+		c = conn.cursor()
 
-        # Drop table when user reconnects to the home page
-        c.execute("""DROP TABLE IF EXISTS players""")
+		c.execute(""" SELECT count(name) FROM sqlite_master WHERE type="table" AND name="players" """)
 
-        # Create table
-        c.execute("""CREATE TABLE players (
-                id integer,
-                first_name text,
-                last_name text,
-                position text,
-                team text,
-                salary integer,
-                points_per_contest real
-                )""")
+		# If db exists
+		if c.fetchone()[0] == 1:
+			c.execute("delete from players")
+		else:
+			# Create table
+			c.execute("""CREATE TABLE players (
+					id integer,
+					first_name text,
+					last_name text,
+					position text,
+					team text,
+					salary integer,
+					points_per_contest real
+					)""")
 
-        conn.commit()
+		conn.commit()
 
-    return jsonpickle.encode(contests(sport=SportAPI.NBA))
+	return jsonpickle.encode(contests(sport=SportAPI.NBA))
 
 
 @app.route("/players")
 def get_players():
-    with sqlite3.connect("players.db") as conn:
-        c = conn.cursor()
+	with sqlite3.connect("players.db") as conn:
+		c = conn.cursor()
 
-        c.execute(
-            """ SELECT count(name) FROM sqlite_master WHERE type="table" AND name="players" """)
+		# Delete content in players table
+		c.execute("delete from players")
 
-        # If db exists
-        if c.fetchone()[0] == 1:
-            # Get id in url query
-            draftId = request.args.get("id")
+		# Get id in url query
+		draftId = request.args.get("id")
 
-            # Get players
-            draftables = available_players(draftId)
+		# Get players
+		draftables = available_players(draftId)
 
-            for player in draftables["players"]:
-                c.execute("""INSERT INTO players VALUES (?, ?, ?, ?, ?, ?, ?)""", (
-                    player["id"],
-                    player["first_name"],
-                    player["last_name"],
-                    player["position"]["name"],
-                    player["team"],
-                    player["draft"]["salary"],
-                    player["points_per_contest"]
-                ))
+		for player in draftables["players"]:
+			c.execute("""INSERT INTO players VALUES (?, ?, ?, ?, ?, ?, ?)""", (
+				player["id"],
+				player["first_name"],
+				player["last_name"],
+				player["position"]["name"],
+				player["team"],
+				player["draft"]["salary"],
+				player["points_per_contest"]
+			))
 
-        c.execute("SELECT * FROM players")
+		c.execute("SELECT * FROM players")
 
-        players = c.fetchall()
-
-        playerJSON = []
-
-        for player in players:
-            playerJSON.append({
-                "id": player[0],
-                "first_name": player[1],
-                "last_name": player[2],
-                "position": player[3],
-                "team": player[4],
-                "salary": player[5],
-                "points_per_contest": player[6]
-            })
-
-        return json.dumps({
-            "players": playerJSON
-        })
+		return json.dumps({
+			"players": [{
+				"id": player[0],
+				"first_name": player[1],
+				"last_name": player[2],
+				"position": player[3],
+				"team": player[4],
+				"salary": player[5],
+				"points_per_contest": player[6]
+			} for player in c.fetchall()]
+		})
 
 
 @app.route("/optimize", methods=["GET", "POST"])
 def optimize():
-    # global draftables
+	with sqlite3.connect("players.db") as conn:
+		c = conn.cursor()
 
-    # lockedPlayers = request.json["locked"]
-    # excludedPlayers = request.json["excluded"]
+		# Get all players in db
+		c.execute("SELECT * FROM players")
 
-    players = [transform_player(player) for player in draftables["players"]]
+		optimizer = get_optimizer(Site.DRAFTKINGS, Sport.BASKETBALL)
+		optimizer.load_players([transform_player(player) for player in c.fetchall()])
 
-    optimizer = get_optimizer(Site.DRAFTKINGS, Sport.BASKETBALL)
-    optimizer.load_players(players)
+		response = {
+			"success": True,
+			"message": None
+		}
 
-    response = {
-        "success": True,
-        "message": None
-    }
-
-    # if lockedPlayers != None:
-    #     for lockedPlayer in lockedPlayers:
-    #         try:
-    #             player = optimizer.get_player_by_id(lockedPlayer)
-    #             optimizer.add_player_to_lineup(player)
-    #         except LineupOptimizerException as exception:
-    #             response["success"] = False
-    #             response["message"] = exception.message
-    #             return response
-
-    # if excludedPlayers != None:
-    #     for excludedPlayer in excludedPlayers:
-    #         try:
-    #             player = optimizer.get_player_by_id(excludedPlayer)
-    #             optimizer.remove_player(player)
-    #         except LineupOptimizerException as exception:
-    #             response["success"] = False
-    #             response["message"] = exception.message
-    #             return response
-
-    try:
-        optimize = optimizer.optimize(1)
-        exporter = JSONLineupExporter(optimize)
-        exportedJSON = exporter.export()
-        return merge_two_dicts(exportedJSON, response)
-    except LineupOptimizerException as exception:
-        response["success"] = False
-        response["message"] = exception.message
-        return response
+		try:
+			optimize = optimizer.optimize(1)
+			exporter = JSONLineupExporter(optimize)
+			exportedJSON = exporter.export()
+			return merge_two_dicts(exportedJSON, response)
+		except LineupOptimizerException as exception:
+			response["success"] = False
+			response["message"] = exception.message
+			return response
