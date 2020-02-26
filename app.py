@@ -31,8 +31,7 @@ def transform_player(player):
 		player[5],
 		player[6],
 		# True if player["status"] == "O" else False,
-		# player[7] if player[7] != "O" else None,
-		None
+		player[7] if player[7] != "O" else None,
 		# False
 	)
 
@@ -44,22 +43,18 @@ def get_contests():
 	with sqlite3.connect("players.db") as conn:
 		c = conn.cursor()
 
-		c.execute(""" SELECT count(name) FROM sqlite_master WHERE type="table" AND name="players" """)
+		c.execute("DROP TABLE players")
 
-		# If db exists
-		if c.fetchone()[0] == 1:
-			c.execute("delete from players")
-		else:
-			# Create table
-			c.execute("""CREATE TABLE players (
-					id integer,
-					first_name text,
-					last_name text,
-					position text,
-					team text,
-					salary integer,
-					points_per_contest real
-					)""")
+		c.execute("""CREATE TABLE players (
+				id integer,
+				first_name text,
+				last_name text,
+				position text,
+				team text,
+				salary integer,
+				points_per_contest real,
+				status text
+				)""")
 
 		conn.commit()
 
@@ -81,14 +76,15 @@ def get_players():
 		draftables = available_players(draftId)
 
 		for player in draftables["players"]:
-			c.execute("""INSERT INTO players VALUES (?, ?, ?, ?, ?, ?, ?)""", (
+			c.execute("""INSERT INTO players VALUES (?, ?, ?, ?, ?, ?, ?, ?)""", (
 				player["id"],
 				player["first_name"],
 				player["last_name"],
 				player["position"]["name"],
 				player["team"],
 				player["draft"]["salary"],
-				player["points_per_contest"]
+				player["points_per_contest"],
+				player["status"]
 			))
 
 		c.execute("SELECT * FROM players")
@@ -101,7 +97,8 @@ def get_players():
 				"position": player[3],
 				"team": player[4],
 				"salary": player[5],
-				"points_per_contest": player[6]
+				"points_per_contest": player[6],
+				"status": player[7]
 			} for player in c.fetchall()]
 		})
 
