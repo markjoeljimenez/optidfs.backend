@@ -2,6 +2,7 @@ import json
 import re
 import requests
 import jsonpickle
+import sqlite3
 from flask import Flask, request
 from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
@@ -12,19 +13,20 @@ from draft_kings.client import contests, available_players, draftables, draft_gr
 app = Flask(__name__)
 CORS(app, support_credentials=True)
 api = Api(app)
-draftables = None
+
 
 def merge_two_dicts(x, y):
-    z = x.copy()   # start with x's keys and values
-    z.update(y)    # modifies z with y's keys and values & returns None
+    z = x.copy()   # start with x"s keys and values
+    z.update(y)    # modifies z with y"s keys and values & returns None
     return z
+
 
 def transform_player(player):
     player = Player(
         player["id"],
         player["first_name"],
         player["last_name"],
-        player["position"]["name"].split('/'),
+        player["position"]["name"].split("/"),
         player["team"],
         player["draft"]["salary"],
         player["points_per_contest"],
@@ -35,26 +37,86 @@ def transform_player(player):
 
     return player
 
-@app.route('/')
+
+@app.route("/")
 def get_contests():
+    with sqlite3.connect("players.db") as conn:
+        c = conn.cursor()
+
+        # Drop table when user reconnects to the home page
+        c.execute("""DROP TABLE IF EXISTS players""")
+
+        # Create table
+        c.execute("""CREATE TABLE players (
+                id integer,
+                first_name text,
+                last_name text,
+                position text,
+                team text,
+                salary integer,
+                points_per_contest real
+                )""")
+
+        conn.commit()
+
     return jsonpickle.encode(contests(sport=SportAPI.NBA))
 
-@app.route('/players')
+
+@app.route("/players")
 def get_players():
-    global draftables
+    with sqlite3.connect("players.db") as conn:
+        c = conn.cursor()
 
-    draftId = request.args.get('id')
-    draftables = available_players(draftId)
+        c.execute(
+            """ SELECT count(name) FROM sqlite_master WHERE type="table" AND name="players" """)
 
-    return draftables
+        # If db exists
+        if c.fetchone()[0] == 1:
+            # Get id in url query
+            draftId = request.args.get("id")
 
-@app.route('/optimize', methods=['GET', 'POST'])
+            # Get players
+            draftables = available_players(draftId)
+
+            for player in draftables["players"]:
+                c.execute("""INSERT INTO players VALUES (?, ?, ?, ?, ?, ?, ?)""", (
+                    player["id"],
+                    player["first_name"],
+                    player["last_name"],
+                    player["position"]["name"],
+                    player["team"],
+                    player["draft"]["salary"],
+                    player["points_per_contest"]
+                ))
+
+        c.execute("SELECT * FROM players")
+
+        players = c.fetchall()
+
+        playerJSON = []
+
+        for player in players:
+            playerJSON.append({
+                "id": player[0],
+                "first_name": player[1],
+                "last_name": player[2],
+                "position": player[3],
+                "team": player[4],
+                "salary": player[5],
+                "points_per_contest": player[6]
+            })
+
+        return json.dumps({
+            "players": playerJSON
+        })
+
+
+@app.route("/optimize", methods=["GET", "POST"])
 def optimize():
-    global draftables
+    # global draftables
 
     # lockedPlayers = request.json["locked"]
     # excludedPlayers = request.json["excluded"]
-
 
     players = [transform_player(player) for player in draftables["players"]]
 
