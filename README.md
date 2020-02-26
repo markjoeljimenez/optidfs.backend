@@ -2,28 +2,34 @@
 
 1. Create Python environment
 
-   ```python
-       python3 -m venv env
-   ```
+    ```python
+        python3 -m venv env
+
+        (Windows)
+        python -m venv env
+    ```
 
 2. Activate environment
 
-   ```python
-       source env/bin/activate
-   ```
+    ```python
+        source env/bin/activate
 
-3. Install pydfs-lineup-optimizer
+        (Windows)
+        ./env/Scripts/activate
+    ```
 
-   ```python
-       pip3 install pydfs-lineup-optimizer
-   ```
+3. Install requirements
 
-## Run flask app
+    ```python
+        pip install -r requirements.txt
+    ```
 
-```python
-    export FLASK_APP=app.py
-    flask run
-```
+4. Set Flask and run virtual environment
+
+    ```python
+        set FLASK_APP=app.py
+        flask run
+    ```
 
 ## Deploy to Heroku
 
