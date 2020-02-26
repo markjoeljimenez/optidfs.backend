@@ -5,7 +5,7 @@ import jsonpickle
 from flask import Flask, request
 from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
-from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, JSONLineupExporter, LineupOptimizerException
+from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, JSONLineupExporter
 from draft_kings.data import Sport as SportAPI
 from draft_kings.client import contests, available_players, draftables, draft_group_details
 
@@ -20,17 +20,15 @@ def merge_two_dicts(x, y):
     return z
 
 def transform_player(player):
-    is_injured = True if player["status"] == "O" else False
-
     player = Player(
         player["id"],
         player["first_name"],
         player["last_name"],
         player["position"]["name"].split('/'),
-        player["team_id"],
+        player["team"],
         player["draft"]["salary"],
         player["points_per_contest"],
-        is_injured,
+        # True if player["status"] == "O" else False,
         player["status"] if player["status"] != "O" else None,
         # False
     )
@@ -54,10 +52,12 @@ def get_players():
 def optimize():
     global draftables
 
-    lockedPlayers = request.json["locked"]
-    excludedPlayers = request.json["excluded"]
+    # lockedPlayers = request.json["locked"]
+    # excludedPlayers = request.json["excluded"]
+
 
     players = [transform_player(player) for player in draftables["players"]]
+
     optimizer = get_optimizer(Site.DRAFTKINGS, Sport.BASKETBALL)
     optimizer.load_players(players)
 
@@ -66,25 +66,25 @@ def optimize():
         "message": None
     }
 
-    if lockedPlayers != None:
-        for lockedPlayer in lockedPlayers:
-            try:
-                player = optimizer.get_player_by_id(lockedPlayer)
-                optimizer.add_player_to_lineup(player)
-            except LineupOptimizerException as exception:
-                response["success"] = False
-                response["message"] = exception.message
-                return response
+    # if lockedPlayers != None:
+    #     for lockedPlayer in lockedPlayers:
+    #         try:
+    #             player = optimizer.get_player_by_id(lockedPlayer)
+    #             optimizer.add_player_to_lineup(player)
+    #         except LineupOptimizerException as exception:
+    #             response["success"] = False
+    #             response["message"] = exception.message
+    #             return response
 
-    if excludedPlayers != None:
-        for excludedPlayer in excludedPlayers:
-            try:
-                player = optimizer.get_player_by_id(excludedPlayer)
-                optimizer.remove_player(player)
-            except LineupOptimizerException as exception:
-                response["success"] = False
-                response["message"] = exception.message
-                return response
+    # if excludedPlayers != None:
+    #     for excludedPlayer in excludedPlayers:
+    #         try:
+    #             player = optimizer.get_player_by_id(excludedPlayer)
+    #             optimizer.remove_player(player)
+    #         except LineupOptimizerException as exception:
+    #             response["success"] = False
+    #             response["message"] = exception.message
+    #             return response
 
     try:
         optimize = optimizer.optimize(1)
