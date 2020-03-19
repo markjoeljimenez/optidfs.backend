@@ -38,27 +38,27 @@ def transform_player(player):
 	return player
 
 
-@app.route("/")
-def get_contests():
-	with sqlite3.connect("players.db") as conn:
-		c = conn.cursor()
+# @app.route("/")
+# def get_contests():
+# 	with sqlite3.connect("players.db") as conn:
+# 		c = conn.cursor()
 
-		c.execute("DROP TABLE IF EXISTS players")
+# 		c.execute("DROP TABLE IF EXISTS players")
 
-		c.execute("""CREATE TABLE players (
-				id integer,
-				first_name text,
-				last_name text,
-				position text,
-				team text,
-				salary integer,
-				points_per_contest real,
-				status text
-				)""")
+# 		c.execute("""CREATE TABLE players (
+# 				id integer,
+# 				first_name text,
+# 				last_name text,
+# 				position text,
+# 				team text,
+# 				salary integer,
+# 				points_per_contest real,
+# 				status text
+# 				)""")
 
-		conn.commit()
+# 		conn.commit()
 
-	return jsonpickle.encode(contests(sport=SportAPI.NBA))
+# 	return jsonpickle.encode(contests(sport=SportAPI.NBA))
 
 
 @app.route("/players")
@@ -73,7 +73,7 @@ def get_players():
 		draftId = request.args.get("id")
 
 		# Get players
-		draftables = available_players(draftId)
+		# draftables = available_players(draftId)
 
 		for player in draftables["players"]:
 			c.execute("""INSERT INTO players VALUES (?, ?, ?, ?, ?, ?, ?, ?)""", (
@@ -103,16 +103,18 @@ def get_players():
 		})
 
 
-@app.route("/optimize", methods=["GET", "POST"])
+# @app.route("/optimize", methods=["GET", "POST"])
+@app.route("/")
 def optimize():
 	with sqlite3.connect("players.db") as conn:
-		c = conn.cursor()
+		# c = conn.cursor()
 
-		# Get all players in db
-		c.execute("SELECT * FROM players")
+		# # Get all players in db
+		# c.execute("SELECT * FROM players")
 
 		optimizer = get_optimizer(Site.DRAFTKINGS, Sport.BASKETBALL)
-		optimizer.load_players([transform_player(player) for player in c.fetchall()])
+		# optimizer.load_players([transform_player(player) for player in c.fetchall()])
+		optimizer.load_players_from_csv("DKSalaries.csv")
 
 		response = {
 			"success": True,
@@ -121,6 +123,7 @@ def optimize():
 
 		try:
 			optimize = optimizer.optimize(1)
+			print(optimize)
 			exporter = JSONLineupExporter(optimize)
 			exportedJSON = exporter.export()
 			return merge_two_dicts(exportedJSON, response)
