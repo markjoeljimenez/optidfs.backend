@@ -9,8 +9,11 @@ from flask_cors import CORS
 from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, JSONLineupExporter
 from draft_kings.data import Sport as SportAPI
 from draft_kings.client import contests, available_players, draftables, draft_group_details
+from nba_api.stats.static import players
+from nba_api.stats.endpoints import commonplayerinfo, playerprofilev2
 
 app = Flask(__name__)
+app.debug = True
 CORS(app, support_credentials=True)
 api = Api(app)
 
@@ -123,7 +126,6 @@ def optimize():
 
 		try:
 			optimize = optimizer.optimize(1)
-			print(optimize)
 			exporter = JSONLineupExporter(optimize)
 			exportedJSON = exporter.export()
 			return merge_two_dicts(exportedJSON, response)
@@ -131,3 +133,24 @@ def optimize():
 			response["success"] = False
 			response["message"] = exception.message
 			return response
+
+
+@app.route("/stats")
+def stats():
+	playerId = players.find_players_by_full_name(request.args.get('player'))[0].get('id', None)
+
+	player_info = json.loads(commonplayerinfo.CommonPlayerInfo(player_id=playerId).get_normalized_json()).get('CommonPlayerInfo', None)[0]
+	player_headline_stats = json.loads(commonplayerinfo.CommonPlayerInfo(player_id=playerId).get_normalized_json()).get('PlayerHeadlineStats', None)[0]
+
+	player_stats = json.loads(playerprofilev2.PlayerProfileV2(player_id=playerId).get_normalized_json())
+
+	teamId = player_info.get('TEAM_ID', None)
+
+	profile_picture = "https://ak-static.cms.nba.com/wp-content/uploads/headshots/nba/%s/2019/260x190/%s.png" % (teamId, playerId)
+
+	return { 
+		**player_info,
+		**player_headline_stats,
+		**player_stats,
+		"profile_picture": profile_picture
+	}
