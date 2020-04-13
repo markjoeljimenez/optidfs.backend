@@ -142,7 +142,7 @@ def stats():
 	player_info = json.loads(commonplayerinfo.CommonPlayerInfo(player_id=playerId).get_normalized_json()).get('CommonPlayerInfo', None)[0]
 	player_headline_stats = json.loads(commonplayerinfo.CommonPlayerInfo(player_id=playerId).get_normalized_json()).get('PlayerHeadlineStats', None)[0]
 
-	player_stats = json.loads(playerprofilev2.PlayerProfileV2(player_id=playerId).get_normalized_json())
+	player_stats = json.loads(playerprofilev2.PlayerProfileV2(per_mode36="PerGame", player_id=playerId).get_normalized_json())
 
 	teamId = player_info.get('TEAM_ID', None)
 
