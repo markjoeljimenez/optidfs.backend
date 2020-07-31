@@ -2,7 +2,6 @@ import json
 import re
 import requests
 import jsonpickle
-import sqlite3
 from flask import Flask, request
 from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
@@ -26,14 +25,14 @@ def merge_two_dicts(x, y):
 
 def transform_player(player):
     player = Player(
-        player[0],
-        player[1],
-        player[2],
-        player[3].split("/"),
-        player[4],
-        player[5],
-        player[6],
-        True if player[7] == "O" else False
+        player["id"],
+        player["first_name"],
+        player["last_name"],
+        player["position"]["name"].split("/"),
+        player["team"],
+        player["draft"]["salary"],
+        player["points_per_contest"],
+        True if player["status"] == "O" else False
         # 1,
         # None if player[7] is not "O" else player[7],
         # "Q"
@@ -45,98 +44,56 @@ def transform_player(player):
 
 @app.route("/")
 def get_contests():
-    with sqlite3.connect("players.db") as conn:
-        c = conn.cursor()
-
-        c.execute("DROP TABLE IF EXISTS players")
-
-        c.execute("""CREATE TABLE players (
-                id integer,
-                first_name text,
-                last_name text,
-                position text,
-                team text,
-                salary integer,
-                points_per_contest real,
-                status text
-                )""")
-
-        conn.commit()
-
     return jsonpickle.encode(contests(sport=SportAPI.NBA))
 
 
 @app.route("/players")
 def get_players():
-    with sqlite3.connect("players.db") as conn:
-        c = conn.cursor()
+    # Get players
+    draftables = available_players(request.args.get("id"))
 
-        # Delete content in players table
-        c.execute("delete from players")
-
-        # Get players
-        draftables = available_players(request.args.get("id"))
-
-        for player in draftables["players"]:
-            c.execute("""INSERT INTO players VALUES (?, ?, ?, ?, ?, ?, ?, ?)""", (
-                player["id"],
-                player["first_name"],
-                player["last_name"],
-                player["position"]["name"],
-                player["team"],
-                player["draft"]["salary"],
-                player["points_per_contest"],
-                player["status"]
-            ))
-
-        c.execute("SELECT * FROM players")
-
-        return json.dumps({
-            "players": [{
-                "id": player[0],
-                "first_name": player[1],
-                "last_name": player[2],
-                "position": player[3],
-                "team": player[4],
-                "salary": player[5],
-                "points_per_contest": player[6],
-                "status": player[7]
-            } for player in c.fetchall()]
-        })
+    return json.dumps({
+        "players": [{
+            "id": player["id"],
+            "first_name": player["first_name"],
+            "last_name": player["last_name"],
+            "position": player["position"]["name"],
+            "team": player["team"],
+            "salary": player["draft"]["salary"],
+            "points_per_contest": player["points_per_contest"],
+            "status": player["status"]
+        } for player in draftables["players"]]
+    })
 
 
 @app.route("/optimize", methods=["GET", "POST"])
 def optimize():
-    with sqlite3.connect("players.db") as conn:
-        c = conn.cursor()
+    draftables = available_players(request.args.get("id"))
 
-        # Get all players in db
-        c.execute("SELECT * FROM players")
+    optimizer = get_optimizer(Site.DRAFTKINGS, Sport.BASKETBALL)
+    optimizer.load_players([transform_player(player)
+                            for player in draftables["players"]])
+    # optimizer.load_players_from_csv("DKSalaries-july29.csv")
 
-        optimizer = get_optimizer(Site.DRAFTKINGS, Sport.BASKETBALL)
-        optimizer.load_players([transform_player(player)
-                                for player in c.fetchall()])
-        # optimizer.load_players_from_csv("DKSalaries-july29.csv")
+    response = {
+        "success": True,
+        "message": None
+    }
 
-        response = {
-            "success": True,
-            "message": None
-        }
+    try:
+        optimize = optimizer.optimize(int(request.args.get(
+            "n")))
+        exporter = JSONLineupExporter(optimize)
+        exportedJSON = exporter.export()
 
-        try:
-            optimize = optimizer.optimize(int(request.args.get(
-                "n")))
-            exporter = JSONLineupExporter(optimize)
-            exportedJSON = exporter.export()
-
-            return merge_two_dicts(exportedJSON, response)
-        except LineupOptimizerException as exception:
-            response["success"] = False
-            response["message"] = exception.message
-            return response
+        return merge_two_dicts(exportedJSON, response)
+    except LineupOptimizerException as exception:
+        response["success"] = False
+        response["message"] = exception.message
+        return response
 
 
-@app.route("/stats")
+@ app.route("/stats")
 def stats():
     playerId = players.find_players_by_full_name(
         request.args.get('player'))[0].get('id', None)
