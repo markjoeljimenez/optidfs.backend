@@ -124,7 +124,8 @@ def optimize():
         }
 
         try:
-            optimize = optimizer.optimize(1)
+            optimize = optimizer.optimize(int(request.args.get(
+                "n")))
             exporter = JSONLineupExporter(optimize)
             exportedJSON = exporter.export()
 
