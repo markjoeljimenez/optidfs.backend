@@ -80,9 +80,18 @@ def optimize():
         "message": None
     }
 
+    json = request.get_json()
+
+    generations = json.get('generations')
+    lockedPlayers = json.get('lockedPlayers')
+
+    if lockedPlayers is not None:
+        for player in lockedPlayers:
+            optimizer.add_player_to_lineup(
+                optimizer.get_player_by_id(player))
+
     try:
-        optimize = optimizer.optimize(int(request.args.get(
-            "n")))
+        optimize = optimizer.optimize(generations)
         exporter = JSONLineupExporter(optimize)
         exportedJSON = exporter.export()
 
