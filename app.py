@@ -6,6 +6,7 @@ from flask import Flask, request
 from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
 from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, JSONLineupExporter
+from pydfs_lineup_optimizer.constants import PlayerRank
 from draft_kings.data import Sport as SportAPI
 from draft_kings.client import contests, available_players, draftables, draft_group_details
 from nba_api.stats.static import players
@@ -28,11 +29,14 @@ def transform_player(player):
         player["id"],
         player["first_name"],
         player["last_name"],
-        player["position"]["name"].split("/"),
+        player["position"].split("/"),
         player["team"],
-        player["draft"]["salary"],
+        player["salary"],
         player["points_per_contest"],
-        True if player["status"] == "O" else False
+        True if player["status"] == "O" else False,
+        PlayerRank.REGULAR,
+        None,
+        player["min_exposure"] if "min_exposure" in player else None
         # 1,
         # None if player[7] is not "O" else player[7],
         # "Q"
@@ -68,22 +72,22 @@ def get_players():
 
 @app.route("/optimize", methods=["GET", "POST"])
 def optimize():
-    draftables = available_players(request.args.get("id"))
-
     optimizer = get_optimizer(Site.DRAFTKINGS, Sport.BASKETBALL)
-    optimizer.load_players([transform_player(player)
-                            for player in draftables["players"]])
+
+    json = request.get_json()
+
+    generations = json.get('generations')
+    lockedPlayers = json.get('lockedPlayers')
+    players = json.get('players')
+
+    optimizer.load_players([transform_player(player) for player in players])
+
     # optimizer.load_players_from_csv("DKSalaries-july29.csv")
 
     response = {
         "success": True,
         "message": None
     }
-
-    json = request.get_json()
-
-    generations = json.get('generations')
-    lockedPlayers = json.get('lockedPlayers')
 
     if lockedPlayers is not None:
         for player in lockedPlayers:
