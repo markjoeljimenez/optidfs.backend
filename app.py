@@ -99,10 +99,11 @@ def optimize():
         "message": None
     }
 
+    print(rules)
+
     if lockedPlayers is not None:
         for player in lockedPlayers:
-            optimizer.add_player_to_lineup(
-                optimizer.get_player_by_id(player))
+            optimizer.add_player_to_lineup(optimizer.get_player_by_id(player))
 
         if "NUMBER_OF_PLAYERS_FROM_SAME_TEAM" in rules:
             for rule in rules['NUMBER_OF_PLAYERS_FROM_SAME_TEAM']:
@@ -115,6 +116,9 @@ def optimize():
                 optimizer.set_players_with_same_position({
                     rule['key']: rule['value']
                 })
+
+        if "MINIMUM_SALARY_CAP" in rules:
+            optimizer.set_min_salary_cap(rules["MINIMUM_SALARY_CAP"])
 
     try:
         optimize = optimizer.optimize(generations)
