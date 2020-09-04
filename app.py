@@ -56,6 +56,16 @@ def get_players():
     # Get players
     draftables = available_players(request.args.get("id"))
 
+    awayTeams = [team["away_team_id"]
+                 for team in draftables["team_series_list"]]
+
+    homeTeams = [team["home_team_id"]
+                 for team in draftables["team_series_list"]]
+
+    teams = [awayTeams, homeTeams]
+
+    # print(draftables)
+
     return json.dumps({
         "players": [{
             "id": player["id"],
@@ -66,7 +76,8 @@ def get_players():
             "salary": player["draft"]["salary"],
             "points_per_contest": player["points_per_contest"],
             "status": player["status"]
-        } for player in draftables["players"]]
+        } for player in draftables["players"]],
+        "teamIds": [y for x in teams for y in x]
     })
 
 
@@ -79,6 +90,7 @@ def optimize():
     generations = json.get('generations')
     lockedPlayers = json.get('lockedPlayers')
     players = json.get('players')
+    rules = json.get('rules')
 
     optimizer.load_players([transform_player(player) for player in players])
 
@@ -93,6 +105,12 @@ def optimize():
         for player in lockedPlayers:
             optimizer.add_player_to_lineup(
                 optimizer.get_player_by_id(player))
+
+        if "NUMBER_OF_PLAYERS_FROM_SAME_TEAM" in rules:
+            for rule in rules['NUMBER_OF_PLAYERS_FROM_SAME_TEAM']:
+                optimizer.set_players_from_one_team({
+                    rule['team']: rule['value']
+                })
 
     try:
         optimize = optimizer.optimize(generations)
