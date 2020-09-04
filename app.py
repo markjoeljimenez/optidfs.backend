@@ -64,8 +64,6 @@ def get_players():
 
     teams = [awayTeams, homeTeams]
 
-    # print(draftables)
-
     return json.dumps({
         "players": [{
             "id": player["id"],
@@ -109,7 +107,13 @@ def optimize():
         if "NUMBER_OF_PLAYERS_FROM_SAME_TEAM" in rules:
             for rule in rules['NUMBER_OF_PLAYERS_FROM_SAME_TEAM']:
                 optimizer.set_players_from_one_team({
-                    rule['team']: rule['value']
+                    rule['key']: rule['value']
+                })
+
+        if "NUMBER_OF_SPECIFIC_POSITIONS" in rules:
+            for rule in rules['NUMBER_OF_SPECIFIC_POSITIONS']:
+                optimizer.set_players_with_same_position({
+                    rule['key']: rule['value']
                 })
 
     try:
