@@ -97,15 +97,15 @@ def optimize():
     }
 
     if "NUMBER_OF_PLAYERS_FROM_SAME_TEAM" in rules:
-        for rule in rules['NUMBER_OF_PLAYERS_FROM_SAME_TEAM']:
+        for team in rules['NUMBER_OF_PLAYERS_FROM_SAME_TEAM']:
             optimizer.set_players_from_one_team({
-                rule['key']: rule['value']
+                team['key']: team['value']
             })
 
     if "NUMBER_OF_SPECIFIC_POSITIONS" in rules:
-        for rule in rules['NUMBER_OF_SPECIFIC_POSITIONS']:
+        for position in rules['NUMBER_OF_SPECIFIC_POSITIONS']:
             optimizer.set_players_with_same_position({
-                rule['key']: rule['value']
+                position['key']: position['value']
             })
 
     if "MINIMUM_SALARY_CAP" in rules:
