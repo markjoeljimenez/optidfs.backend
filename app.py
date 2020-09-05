@@ -36,11 +36,8 @@ def transform_player(player):
         True if player["status"] == "O" else False,
         PlayerRank.REGULAR,
         None,
-        player["min_exposure"] if "min_exposure" in player else None
-        # 1,
-        # None if player[7] is not "O" else player[7],
-        # "Q"
-        # False
+        player["min_exposure"] if "min_exposure" in player else None,
+        player["projected_ownership"] if "projected_ownership" in player else None
     )
 
     return player
@@ -99,24 +96,28 @@ def optimize():
         "message": None
     }
 
-       if "NUMBER_OF_PLAYERS_FROM_SAME_TEAM" in rules:
-            for rule in rules['NUMBER_OF_PLAYERS_FROM_SAME_TEAM']:
-                optimizer.set_players_from_one_team({
-                    rule['key']: rule['value']
-                })
+    if "NUMBER_OF_PLAYERS_FROM_SAME_TEAM" in rules:
+        for rule in rules['NUMBER_OF_PLAYERS_FROM_SAME_TEAM']:
+            optimizer.set_players_from_one_team({
+                rule['key']: rule['value']
+            })
 
-        if "NUMBER_OF_SPECIFIC_POSITIONS" in rules:
-            for rule in rules['NUMBER_OF_SPECIFIC_POSITIONS']:
-                optimizer.set_players_with_same_position({
-                    rule['key']: rule['value']
-                })
+    if "NUMBER_OF_SPECIFIC_POSITIONS" in rules:
+        for rule in rules['NUMBER_OF_SPECIFIC_POSITIONS']:
+            optimizer.set_players_with_same_position({
+                rule['key']: rule['value']
+            })
 
-        if "MINIMUM_SALARY_CAP" in rules:
-            optimizer.set_min_salary_cap(rules["MINIMUM_SALARY_CAP"])
+    if "MINIMUM_SALARY_CAP" in rules:
+        optimizer.set_min_salary_cap(rules["MINIMUM_SALARY_CAP"])
 
-        if "MAX_REPEATING_PLAYERS" in rules:
-            optimizer.set_max_repeating_players(
-                rules["MAX_REPEATING_PLAYERS"])
+    if "MAX_REPEATING_PLAYERS" in rules:
+        optimizer.set_max_repeating_players(
+            rules["MAX_REPEATING_PLAYERS"])
+
+    if "PROJECTED_OWNERSHIP" in rules:
+        optimizer.set_projected_ownership(
+            min_projected_ownership=rules["PROJECTED_OWNERSHIP"])
 
     if lockedPlayers is not None:
         for player in lockedPlayers:
