@@ -11,6 +11,7 @@ from draft_kings.data import Sport as SportAPI
 from draft_kings.client import contests, available_players, draftables, draft_group_details
 from nba_api.stats.static import players
 from nba_api.stats.endpoints import commonplayerinfo, playerprofilev2
+from utils import transform_player, merge_two_dicts, get_sport
 
 app = Flask(__name__)
 app.debug = True
@@ -18,34 +19,13 @@ CORS(app, support_credentials=True)
 api = Api(app)
 
 
-def merge_two_dicts(x, y):
-    z = x.copy()   # start with x"s keys and values
-    z.update(y)    # modifies z with y"s keys and values & returns None
-    return z
-
-
-def transform_player(player):
-    player = Player(
-        player["id"],
-        player["first_name"],
-        player["last_name"],
-        player["position"].split("/"),
-        player["team"],
-        player["salary"],
-        player["points_per_contest"],
-        True if player["status"] == "O" else False,
-        PlayerRank.REGULAR,
-        None,
-        player["min_exposure"] if "min_exposure" in player else None,
-        player["projected_ownership"] if "projected_ownership" in player else None
-    )
-
-    return player
-
-
-@app.route("/")
+@app.route("/", methods=["GET", "POST"])
 def get_contests():
-    return jsonpickle.encode(contests(sport=SportAPI.NBA))
+    json = request.get_json()
+
+    sport = json.get('sport')
+
+    return jsonpickle.encode(contests(sport=SportAPI[sport])["contests"])
 
 
 @app.route("/players")
@@ -78,18 +58,18 @@ def get_players():
 
 @app.route("/optimize", methods=["GET", "POST"])
 def optimize():
-    optimizer = get_optimizer(Site.DRAFTKINGS, Sport.BASKETBALL)
-
     json = request.get_json()
 
     generations = json.get('generations')
     lockedPlayers = json.get('lockedPlayers')
     players = json.get('players')
     rules = json.get('rules')
+    sport = json.get('sport')
+
+    optimizer = get_optimizer(Site.DRAFTKINGS, get_sport(sport))
 
     optimizer.load_players([transform_player(player) for player in players])
-
-    # optimizer.load_players_from_csv("DKSalaries-july29.csv")
+    # optimizer.load_players_from_csv("DKSalaries-nfl-sept-5.csv")
 
     response = {
         "success": True,
