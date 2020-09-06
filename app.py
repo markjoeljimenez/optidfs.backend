@@ -3,7 +3,7 @@ import re
 import requests
 import jsonpickle
 import pydash
-from flask import Flask, request
+from flask import Flask, request, send_file
 from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
 from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, DraftKingsCSVLineupExporter, JSONLineupExporter
@@ -65,7 +65,7 @@ def get_players():
     })
 
 
-@ app.route("/optimize", methods=["GET", "POST"])
+@app.route("/optimize", methods=["GET", "POST"])
 def optimize():
     json = request.get_json()
 
@@ -115,40 +115,51 @@ def optimize():
     try:
         optimize = optimizer.optimize(generations)
         exporter = JSONLineupExporter(optimize)
-        # exportedJSON = exporter.export()
 
         # csv_exporter = DraftKingsCSVLineupExporter(optimize)
         # csv_exporter.export(
         #     'result.csv', lambda player: player.id)
 
-        return merge_two_dicts(exporter.export(), response)
+        exportedJSON = exporter.export()
+
+        return merge_two_dicts(exportedJSON, response)
     except LineupOptimizerException as exception:
         response["success"] = False
         response["message"] = exception.message
         return response
 
 
-@ app.route("/stats")
-def stats():
-    playerId = players.find_players_by_full_name(
-        request.args.get('player'))[0].get('id', None)
+@app.route('/export')
+def exportCSV():
+    return send_file(
+        "result.csv",
+        mimetype='application/x-csv',
+        attachment_filename='DKSalaries.csv',
+        cache_timeout=-1,
+        as_attachment=True)
 
-    player_info = json.loads(commonplayerinfo.CommonPlayerInfo(
-        player_id=playerId).get_normalized_json()).get('CommonPlayerInfo', None)[0]
-    player_headline_stats = json.loads(commonplayerinfo.CommonPlayerInfo(
-        player_id=playerId).get_normalized_json()).get('PlayerHeadlineStats', None)[0]
 
-    player_stats = json.loads(playerprofilev2.PlayerProfileV2(
-        per_mode36="PerGame", player_id=playerId).get_normalized_json())
+# @ app.route("/stats")
+# def stats():
+#     playerId = players.find_players_by_full_name(
+#         request.args.get('player'))[0].get('id', None)
 
-    teamId = player_info.get('TEAM_ID', None)
+#     player_info = json.loads(commonplayerinfo.CommonPlayerInfo(
+#         player_id=playerId).get_normalized_json()).get('CommonPlayerInfo', None)[0]
+#     player_headline_stats = json.loads(commonplayerinfo.CommonPlayerInfo(
+#         player_id=playerId).get_normalized_json()).get('PlayerHeadlineStats', None)[0]
 
-    profile_picture = "https://ak-static.cms.nba.com/wp-content/uploads/headshots/nba/%s/2019/260x190/%s.png" % (
-        teamId, playerId)
+#     player_stats = json.loads(playerprofilev2.PlayerProfileV2(
+#         per_mode36="PerGame", player_id=playerId).get_normalized_json())
 
-    return {
-        **player_info,
-        **player_headline_stats,
-        **player_stats,
-        "profile_picture": profile_picture
-    }
+#     teamId = player_info.get('TEAM_ID', None)
+
+#     profile_picture = "https://ak-static.cms.nba.com/wp-content/uploads/headshots/nba/%s/2019/260x190/%s.png" % (
+#         teamId, playerId)
+
+#     return {
+#         **player_info,
+#         **player_headline_stats,
+#         **player_stats,
+#         "profile_picture": profile_picture
+#     }
