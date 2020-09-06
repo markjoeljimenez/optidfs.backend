@@ -25,7 +25,7 @@ def get_contests():
 
     sport = json.get('sport')
 
-    return jsonpickle.encode(contests(sport=SportAPI[sport])["contests"])
+    return jsonpickle.encode(contests(sport=SportAPI[sport]))
 
 
 @app.route("/players")
