@@ -2,10 +2,11 @@ import json
 import re
 import requests
 import jsonpickle
+import pydash
 from flask import Flask, request
 from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
-from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, JSONLineupExporter
+from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, DraftKingsCSVLineupExporter, JSONLineupExporter
 from pydfs_lineup_optimizer.constants import PlayerRank
 from draft_kings.data import Sport as SportAPI
 from draft_kings.client import contests, available_players, draftables, draft_group_details
@@ -30,20 +31,28 @@ def get_contests():
 
 @app.route("/players")
 def get_players():
+    id = request.args.get("id")
+
+    def get_draftable_id(player):
+        return pydash.find(draftables(
+            id)["draftables"], lambda _player: _player["id"] == player["id"])["draftable_id"]
+
     # Get players
-    draftables = available_players(request.args.get("id"))
+    players = available_players(id)["players"]
 
-    awayTeams = [team["away_team_id"]
-                 for team in draftables["team_series_list"]]
+    def map_player(id, player):
+        return {
+            **player,
+            "id": id
+        }
 
-    homeTeams = [team["home_team_id"]
-                 for team in draftables["team_series_list"]]
-
-    teams = [awayTeams, homeTeams]
+    transformed_players = map(map_player, [get_draftable_id(player)
+                                           for player in players], players)
 
     return json.dumps({
         "players": [{
             "id": player["id"],
+            # "draftable_id": player["draftable_id"],
             "first_name": player["first_name"],
             "last_name": player["last_name"],
             "position": player["position"]["name"],
@@ -51,12 +60,12 @@ def get_players():
             "salary": player["draft"]["salary"],
             "points_per_contest": player["points_per_contest"],
             "status": player["status"]
-        } for player in draftables["players"]],
-        "teamIds": [y for x in teams for y in x]
+        } for player in transformed_players]
+        # "teamIds": [y for x in teams for y in x]
     })
 
 
-@app.route("/optimize", methods=["GET", "POST"])
+@ app.route("/optimize", methods=["GET", "POST"])
 def optimize():
     json = request.get_json()
 
@@ -106,9 +115,13 @@ def optimize():
     try:
         optimize = optimizer.optimize(generations)
         exporter = JSONLineupExporter(optimize)
-        exportedJSON = exporter.export()
+        # exportedJSON = exporter.export()
 
-        return merge_two_dicts(exportedJSON, response)
+        # csv_exporter = DraftKingsCSVLineupExporter(optimize)
+        # csv_exporter.export(
+        #     'result.csv', lambda player: player.id)
+
+        return merge_two_dicts(exporter.export(), response)
     except LineupOptimizerException as exception:
         response["success"] = False
         response["message"] = exception.message
