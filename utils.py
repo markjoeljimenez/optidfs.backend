@@ -1,5 +1,8 @@
+import csv
+import pydash
 from pydfs_lineup_optimizer import Player, Sport
 from pydfs_lineup_optimizer.constants import PlayerRank
+from draft_kings.client import draftables
 
 
 def merge_two_dicts(x, y):
@@ -42,3 +45,19 @@ def get_sport(sport):
 
     if sport == 'SOCCER':
         return Sport.SOCCER
+
+
+def generate_csv(lineups, draft_group_id):
+    with open('test.csv', 'w') as csvfile:
+        positions = ["PG", "SG", "SF", "PF", "C", "G", "F", "UTIL"]
+
+        def get_draftable_id(id):
+            return pydash.find(draftables(draft_group_id)["draftables"], lambda _player: _player["id"] == id)["draftable_id"]
+
+        lineup_writer = csv.writer(csvfile, delimiter=',')
+        for index, lineup in enumerate(lineups):
+            if index == 0:
+                header = [pos for pos in positions]
+                lineup_writer.writerow(header)
+            row = [get_draftable_id(player) for player in lineup["players"]]
+            lineup_writer.writerow(row)
