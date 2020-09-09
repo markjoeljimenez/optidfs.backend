@@ -1,5 +1,6 @@
 import csv
 import pydash
+import io
 from pydfs_lineup_optimizer import Player, Sport
 from pydfs_lineup_optimizer.constants import PlayerRank
 from draft_kings.client import draftables
@@ -48,16 +49,20 @@ def get_sport(sport):
 
 
 def generate_csv(lineups, draft_group_id):
-    with open('test.csv', 'w') as csvfile:
-        positions = ["PG", "SG", "SF", "PF", "C", "G", "F", "UTIL"]
+    def get_draftable_id(id):
+        return pydash.find(draftables(draft_group_id)["draftables"], lambda _player: _player["id"] == id)["draftable_id"]
 
-        def get_draftable_id(id):
-            return pydash.find(draftables(draft_group_id)["draftables"], lambda _player: _player["id"] == id)["draftable_id"]
+    positions = ["PG", "SG", "SF", "PF", "C", "G", "F", "UTIL"]
+    # csvrow = []
+    csvfile = io.StringIO()
 
-        lineup_writer = csv.writer(csvfile, delimiter=',')
-        for index, lineup in enumerate(lineups):
-            if index == 0:
-                header = [pos for pos in positions]
-                lineup_writer.writerow(header)
-            row = [get_draftable_id(player) for player in lineup["players"]]
-            lineup_writer.writerow(row)
+    lineup_writer = csv.writer(csvfile, delimiter=',')
+
+    for index, lineup in enumerate(lineups):
+        if index == 0:
+            header = [pos for pos in positions]
+            lineup_writer.writerow(header)
+        row = [get_draftable_id(player) for player in lineup["players"]]
+        lineup_writer.writerow(row)
+
+    return csvfile

@@ -4,7 +4,7 @@ import re
 import requests
 import jsonpickle
 import pydash
-from flask import Flask, request, send_file, session
+from flask import Flask, request, session, make_response
 from flask_session import Session
 from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
@@ -143,16 +143,13 @@ def exportCSV():
     if "lineups" in session:
         lineups = session.get("lineups")
 
-        # print(session.get("draftGroupId"))
+        csv = generate_csv(lineups, session.get("draftGroupId"))
 
-        generate_csv(lineups, session.get("draftGroupId"))
+        response = make_response(csv.getvalue())
+        response.headers["Content-Disposition"] = "attachment; filename=DKSalaries.csv"
+        response.headers["Content-type"] = "text/csv"
 
-        return send_file(
-            'test.csv',
-            mimetype='application/x-csv',
-            attachment_filename='DKSalaries.csv',
-            cache_timeout=-1,
-            as_attachment=True)
+        return response
 
 
 # @ app.route("/stats")
