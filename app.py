@@ -80,10 +80,10 @@ def optimize():
     lockedPlayers = json.get('lockedPlayers')
     players = json.get('players')
     rules = json.get('rules')
-    sport = json.get('sport')
+    session["sport"] = json.get('sport')
     session["draftGroupId"] = json.get('draftGroupId')
 
-    optimizer = get_optimizer(Site.DRAFTKINGS, get_sport(sport))
+    optimizer = get_optimizer(Site.DRAFTKINGS, get_sport(session.get('sport')))
 
     optimizer.load_players([transform_player(player)
                             for player in players])
@@ -142,8 +142,9 @@ def optimize():
 def exportCSV():
     if "lineups" in session:
         lineups = session.get("lineups")
+        sport = session.get("sport")
 
-        csv = generate_csv(lineups, session.get("draftGroupId"))
+        csv = generate_csv(lineups, session.get("draftGroupId"), sport)
 
         response = make_response(csv.getvalue())
         response.headers["Content-Disposition"] = "attachment; filename=DKSalaries.csv"
