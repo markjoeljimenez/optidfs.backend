@@ -1,8 +1,11 @@
+from os import environ
 import json
 import re
 import requests
 import jsonpickle
-from flask import Flask, request
+import pydash
+from flask import Flask, request, session, make_response
+from flask_session import Session
 from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
 from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, JSONLineupExporter
@@ -11,12 +14,18 @@ from draft_kings.data import Sport as SportAPI
 from draft_kings.client import contests, available_players, draftables, draft_group_details
 from nba_api.stats.static import players
 from nba_api.stats.endpoints import commonplayerinfo, playerprofilev2
-from utils import transform_player, merge_two_dicts, get_sport
+from utils import transform_player, merge_two_dicts, get_sport, generate_csv
+
+sess = Session()
 
 app = Flask(__name__)
 app.debug = True
-CORS(app, support_credentials=True)
-api = Api(app)
+app.config["SECRET_KEY"] = environ.get('SECRET_KEY')
+app.config["SESSION_TYPE"] = 'filesystem'
+
+sess.init_app(app)
+
+CORS(app, supports_credentials=True)
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -30,20 +39,27 @@ def get_contests():
 
 @app.route("/players")
 def get_players():
+    id = request.args.get("id")
+
     # Get players
-    draftables = available_players(request.args.get("id"))
+    players = available_players(id)["players"]
 
-    awayTeams = [team["away_team_id"]
-                 for team in draftables["team_series_list"]]
+    # def get_draftable_id(player):
+    #     return pydash.find(draftables(id)["draftables"], lambda _player: _player["id"] == player["id"])["draftable_id"]
 
-    homeTeams = [team["home_team_id"]
-                 for team in draftables["team_series_list"]]
+    # def map_player(id, player):
+    #     return {
+    #         **player,
+    #         "id": id
+    #     }
 
-    teams = [awayTeams, homeTeams]
+    # transformed_players = map(
+    #     map_player, [get_draftable_id(player) for player in players], players)
 
     return json.dumps({
         "players": [{
             "id": player["id"],
+            # "draftable_id": player["draftable_id"],
             "first_name": player["first_name"],
             "last_name": player["last_name"],
             "position": player["position"]["name"],
@@ -51,8 +67,8 @@ def get_players():
             "salary": player["draft"]["salary"],
             "points_per_contest": player["points_per_contest"],
             "status": player["status"]
-        } for player in draftables["players"]],
-        "teamIds": [y for x in teams for y in x]
+        } for player in players]
+        # "teamIds": [y for x in teams for y in x]
     })
 
 
@@ -64,11 +80,13 @@ def optimize():
     lockedPlayers = json.get('lockedPlayers')
     players = json.get('players')
     rules = json.get('rules')
-    sport = json.get('sport')
+    session["sport"] = json.get('sport')
+    session["draftGroupId"] = json.get('draftGroupId')
 
-    optimizer = get_optimizer(Site.DRAFTKINGS, get_sport(sport))
+    optimizer = get_optimizer(Site.DRAFTKINGS, get_sport(session.get('sport')))
 
-    optimizer.load_players([transform_player(player) for player in players])
+    optimizer.load_players([transform_player(player)
+                            for player in players])
     # optimizer.load_players_from_csv("DKSalaries-nfl-sept-5.csv")
 
     response = {
@@ -106,36 +124,56 @@ def optimize():
     try:
         optimize = optimizer.optimize(generations)
         exporter = JSONLineupExporter(optimize)
-        exportedJSON = exporter.export()
+        exported_json = exporter.export()
 
-        return merge_two_dicts(exportedJSON, response)
+        session["lineups"] = exported_json["lineups"]
+
+        # csv_exporter = DraftKingsCSVLineupExporter(optimize)
+        # csv_exporter.export('result.csv', lambda player: player.id)
+
+        return merge_two_dicts(exported_json, response)
     except LineupOptimizerException as exception:
         response["success"] = False
         response["message"] = exception.message
         return response
 
 
-@ app.route("/stats")
-def stats():
-    playerId = players.find_players_by_full_name(
-        request.args.get('player'))[0].get('id', None)
+@app.route('/export')
+def exportCSV():
+    if "lineups" in session:
+        lineups = session.get("lineups")
+        sport = session.get("sport")
 
-    player_info = json.loads(commonplayerinfo.CommonPlayerInfo(
-        player_id=playerId).get_normalized_json()).get('CommonPlayerInfo', None)[0]
-    player_headline_stats = json.loads(commonplayerinfo.CommonPlayerInfo(
-        player_id=playerId).get_normalized_json()).get('PlayerHeadlineStats', None)[0]
+        csv = generate_csv(lineups, session.get("draftGroupId"), sport)
 
-    player_stats = json.loads(playerprofilev2.PlayerProfileV2(
-        per_mode36="PerGame", player_id=playerId).get_normalized_json())
+        response = make_response(csv.getvalue())
+        response.headers["Content-Disposition"] = "attachment; filename=DKSalaries.csv"
+        response.headers["Content-type"] = "text/csv"
 
-    teamId = player_info.get('TEAM_ID', None)
+        return response
 
-    profile_picture = "https://ak-static.cms.nba.com/wp-content/uploads/headshots/nba/%s/2019/260x190/%s.png" % (
-        teamId, playerId)
 
-    return {
-        **player_info,
-        **player_headline_stats,
-        **player_stats,
-        "profile_picture": profile_picture
-    }
+# @ app.route("/stats")
+# def stats():
+#     playerId = players.find_players_by_full_name(
+#         request.args.get('player'))[0].get('id', None)
+
+#     player_info = json.loads(commonplayerinfo.CommonPlayerInfo(
+#         player_id=playerId).get_normalized_json()).get('CommonPlayerInfo', None)[0]
+#     player_headline_stats = json.loads(commonplayerinfo.CommonPlayerInfo(
+#         player_id=playerId).get_normalized_json()).get('PlayerHeadlineStats', None)[0]
+
+#     player_stats = json.loads(playerprofilev2.PlayerProfileV2(
+#         per_mode36="PerGame", player_id=playerId).get_normalized_json())
+
+#     teamId = player_info.get('TEAM_ID', None)
+
+#     profile_picture = "https://ak-static.cms.nba.com/wp-content/uploads/headshots/nba/%s/2019/260x190/%s.png" % (
+#         teamId, playerId)
+
+#     return {
+#         **player_info,
+#         **player_headline_stats,
+#         **player_stats,
+#         "profile_picture": profile_picture
+#     }
