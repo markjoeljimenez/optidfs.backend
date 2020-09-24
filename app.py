@@ -22,6 +22,9 @@ app = Flask(__name__)
 app.debug = True
 app.config["SECRET_KEY"] = environ.get('SECRET_KEY')
 app.config["SESSION_TYPE"] = 'filesystem'
+app.config["SESSION_COOKIE_HTTPONLY"] = False
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+# app.config.update(SESSION_COOKIE_SAMESITE="None", SESSION_COOKIE_SECURE=True, )
 
 sess.init_app(app)
 
@@ -30,6 +33,7 @@ CORS(app, supports_credentials=True)
 
 @app.route("/", methods=["GET", "POST"])
 def get_contests():
+    # set_cookie()
     json = request.get_json()
 
     sport = json.get('sport')
@@ -113,9 +117,9 @@ def optimize():
         optimizer.set_max_repeating_players(
             rules["MAX_REPEATING_PLAYERS"])
 
-    if "PROJECTED_OWNERSHIP" in rules:
+    if "MAX_PROJECTED_OWNERSHIP" in rules or "MIN_PROJECTED_OWNERSHIP" in rules:
         optimizer.set_projected_ownership(
-            min_projected_ownership=rules["PROJECTED_OWNERSHIP"])
+            min_projected_ownership=rules["MIN_PROJECTED_OWNERSHIP"] if "MIN_PROJECTED_OWNERSHIP" in rules else None, max_projected_ownership=rules["MAX_PROJECTED_OWNERSHIP"] if "MAX_PROJECTED_OWNERSHIP" in rules else None)
 
     if lockedPlayers is not None:
         for player in lockedPlayers:
