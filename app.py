@@ -4,8 +4,7 @@ import re
 import requests
 import jsonpickle
 import pydash
-from flask import Flask, request, session, make_response
-from flask_session import Session
+from flask import Flask, request, session
 from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
 from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, JSONLineupExporter
@@ -16,24 +15,18 @@ from nba_api.stats.static import players
 from nba_api.stats.endpoints import commonplayerinfo, playerprofilev2
 from utils import transform_player, merge_two_dicts, get_sport, generate_csv
 
-# sess = Session()
-
 app = Flask(__name__)
 app.debug = True
 app.config["SECRET_KEY"] = environ.get('SECRET_KEY')
 app.config["SESSION_TYPE"] = 'filesystem'
 app.config["SESSION_COOKIE_HTTPONLY"] = False
 app.config["SESSION_COOKIE_SAMESITE"] = None
-app.config["SESSION_COOKIE_SECURE"] = True
-
-# sess.init_app(app)
 
 CORS(app, supports_credentials=True)
 
 
 @app.route("/", methods=["GET", "POST"])
 def get_contests():
-    # set_cookie()
     json = request.get_json()
 
     sport = json.get('sport')
