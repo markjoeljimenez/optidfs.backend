@@ -18,7 +18,7 @@ from utils import transform_player, merge_two_dicts, get_sport, generate_csv
 app = Flask(__name__)
 app.debug = True
 app.config["SECRET_KEY"] = environ.get('SECRET_KEY')
-app.config["SESSION_TYPE"] = 'filesystem'
+# app.config["SESSION_TYPE"] = 'filesystem'
 app.config["SESSION_COOKIE_HTTPONLY"] = False
 app.config["SESSION_COOKIE_SAMESITE"] = None
 
