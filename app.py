@@ -16,17 +16,17 @@ from nba_api.stats.static import players
 from nba_api.stats.endpoints import commonplayerinfo, playerprofilev2
 from utils import transform_player, merge_two_dicts, get_sport, generate_csv
 
-sess = Session()
+# sess = Session()
 
 app = Flask(__name__)
 app.debug = True
 app.config["SECRET_KEY"] = environ.get('SECRET_KEY')
 app.config["SESSION_TYPE"] = 'filesystem'
 app.config["SESSION_COOKIE_HTTPONLY"] = False
-app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-# app.config.update(SESSION_COOKIE_SAMESITE="None", SESSION_COOKIE_SECURE=True, )
+app.config["SESSION_COOKIE_SAMESITE"] = None
+app.config["SESSION_COOKIE_SECURE"] = True
 
-sess.init_app(app)
+# sess.init_app(app)
 
 CORS(app, supports_credentials=True)
 
