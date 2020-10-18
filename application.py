@@ -29,9 +29,13 @@ CORS(application, supports_credentials=True)
 def get_contests():
     json = request.get_json()
 
-    sport = json.get('sport')
+    if json:
+        sport = json.get('sport')
 
-    return jsonpickle.encode(contests(sport=SportAPI[sport]))
+        if sport:
+            return jsonpickle.encode(contests(sport=SportAPI[sport]))
+
+    return {}
 
 
 @application.route("/players")
