@@ -15,17 +15,17 @@ from nba_api.stats.static import players
 from nba_api.stats.endpoints import commonplayerinfo, playerprofilev2
 from utils import transform_player, merge_two_dicts, get_sport, generate_csv
 
-app = Flask(__name__)
-app.debug = True
-app.config["SECRET_KEY"] = environ.get('SECRET_KEY')
-# app.config["SESSION_TYPE"] = 'filesystem'
-app.config["SESSION_COOKIE_HTTPONLY"] = False
-app.config["SESSION_COOKIE_SAMESITE"] = None
+application = Flask(__name__)
+application.debug = True
+application.config["SECRET_KEY"] = environ.get('SECRET_KEY')
+# application.config["SESSION_TYPE"] = 'filesystem'
+application.config["SESSION_COOKIE_HTTPONLY"] = False
+application.config["SESSION_COOKIE_SAMESITE"] = None
 
-CORS(app, supports_credentials=True)
+CORS(application, supports_credentials=True)
 
 
-@app.route("/", methods=["GET", "POST"])
+@application.route("/", methods=["GET", "POST"])
 def get_contests():
     json = request.get_json()
 
@@ -34,7 +34,7 @@ def get_contests():
     return jsonpickle.encode(contests(sport=SportAPI[sport]))
 
 
-@app.route("/players")
+@application.route("/players")
 def get_players():
     id = request.args.get("id")
 
@@ -69,7 +69,7 @@ def get_players():
     })
 
 
-@app.route("/optimize", methods=["GET", "POST"])
+@application.route("/optimize", methods=["GET", "POST"])
 def optimize():
     json = request.get_json()
 
@@ -135,7 +135,7 @@ def optimize():
         return response
 
 
-@app.route('/export')
+@application.route('/export')
 def exportCSV():
     if "lineups" in session:
         lineups = session.get("lineups")
@@ -150,7 +150,7 @@ def exportCSV():
         return response
 
 
-# @ app.route("/stats")
+# @ application.route("/stats")
 # def stats():
 #     playerId = players.find_players_by_full_name(
 #         request.args.get('player'))[0].get('id', None)
