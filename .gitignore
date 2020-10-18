@@ -5,3 +5,7 @@ env
 .vscode
 *.pyc
 *.db
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
