@@ -141,17 +141,22 @@ def optimize():
 
 @application.route('/export')
 def exportCSV():
+    print(session)
+
     if "lineups" in session:
         lineups = session.get("lineups")
+        draftGroupId = session.get("draftGroupId")
         sport = session.get("sport")
 
-        csv = generate_csv(lineups, session.get("draftGroupId"), sport)
+        csv = generate_csv(lineups, draftGroupId, sport)
 
         response = make_response(csv.getvalue())
         response.headers["Content-Disposition"] = "attachment; filename=DKSalaries.csv"
         response.headers["Content-type"] = "text/csv"
 
         return response
+
+        return {}
 
 
 # @ application.route("/stats")
