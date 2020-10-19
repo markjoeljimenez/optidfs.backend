@@ -69,6 +69,7 @@ def get_positions(sport):
 
 def generate_csv(lineups, draft_group_id, sport):
     def get_draftable_id(id):
+        print(draftables(draft_group_id)["draftables"])
         return pydash.find(draftables(draft_group_id)["draftables"], lambda _player: _player["id"] == id)["draftable_id"]
 
     positions = get_positions(sport)
