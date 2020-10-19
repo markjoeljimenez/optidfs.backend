@@ -4,6 +4,7 @@ import re
 import requests
 import jsonpickle
 import pydash
+import pandas as pd
 from flask import Flask, request, session, make_response
 from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
@@ -11,9 +12,7 @@ from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOpt
 from pydfs_lineup_optimizer.constants import PlayerRank
 from draft_kings.data import Sport as SportAPI
 from draft_kings.client import contests, available_players, draftables, draft_group_details
-from nba_api.stats.static import players
-from nba_api.stats.endpoints import commonplayerinfo, playerprofilev2
-from utils import transform_player, merge_two_dicts, get_sport, generate_csv
+from utils import transform_player, merge_two_dicts, get_sport, generate_csv, get_positions
 
 application = Flask(__name__)
 application.debug = True
@@ -150,13 +149,13 @@ def exportCSV():
 
         csv = generate_csv(lineups, draftGroupId, sport)
 
-        response = make_response(csv.getvalue())
+        response = make_response(csv)
         response.headers["Content-Disposition"] = "attachment; filename=DKSalaries.csv"
         response.headers["Content-type"] = "text/csv"
 
         return response
 
-        return {}
+    return {}
 
 
 # @ application.route("/stats")

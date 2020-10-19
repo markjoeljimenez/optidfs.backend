@@ -1,6 +1,7 @@
-import csv
+# import csv
 import pydash
-import io
+# import io
+import pandas as pd
 from pydfs_lineup_optimizer import Player, Sport
 from pydfs_lineup_optimizer.constants import PlayerRank
 from draft_kings.client import draftables
@@ -72,14 +73,15 @@ def generate_csv(lineups, draft_group_id, sport):
 
     positions = get_positions(sport)
 
-    csvfile = io.StringIO()
-    lineup_writer = csv.writer(csvfile, delimiter=',')
+    csv = pd.DataFrame(positions, [get_draftable_id(player)
+                                   for player in lineups[0]["players"]])
+    # lineup_writer = csv.writer(csvfile, delimiter=',')
 
-    for index, lineup in enumerate(lineups):
-        if index == 0:
-            header = [pos for pos in positions]
-            lineup_writer.writerow(header)
-        row = [get_draftable_id(player) for player in lineup["players"]]
-        lineup_writer.writerow(row)
+    # for index, lineup in enumerate(lineups):
+    #     if index == 0:
+    #         header = [pos for pos in positions]
+    #         lineup_writer.writerow(header)
+    #     row = [get_draftable_id(player) for player in lineup["players"]]
+    #     lineup_writer.writerow(row)
 
-    return csvfile
+    return csv.to_csv()
