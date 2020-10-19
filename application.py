@@ -5,7 +5,7 @@ import requests
 import jsonpickle
 import pydash
 import pandas as pd
-from flask import Flask, request, session, make_response
+from flask import Flask, request, session, Response
 from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
 from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, JSONLineupExporter
@@ -149,11 +149,14 @@ def exportCSV():
 
         csv = generate_csv(lineups, draftGroupId, sport)
 
-        response = make_response(csv)
-        response.headers["Content-Disposition"] = "attachment; filename=DKSalaries.csv"
-        response.headers["Content-type"] = "text/csv"
+        # response = make_response(csv)
+        # response.headers["Content-Disposition"] = "attachment; filename=DKSalaries.csv"
+        # response.headers["Content-type"] = "text/csv"
 
-        return response
+        return Response(csv,
+                        mimetype='text/csv',
+                        headers={"Content-disposition":
+                                 "attachment; filename=DKSalaries.csv"})
 
     return {}
 
