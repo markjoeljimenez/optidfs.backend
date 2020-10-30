@@ -10,9 +10,9 @@ from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
 from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, JSONLineupExporter
 from pydfs_lineup_optimizer.constants import PlayerRank
-from draft_kings.data import Sport as SportAPI
-from draft_kings.client import contests, available_players, draftables, draft_group_details
-from utils import transform_player, merge_two_dicts, get_sport, generate_csv, get_positions
+from draft_kings.data import SPORT_ID_TO_SPORT
+from draft_kings.client import contests, available_players, draftables, draft_group_details, sports
+from utils import SPORT_ID_TO_PYDFS_SPORT, transform_player, merge_two_dicts, generate_csv, get_positions
 
 application = Flask(__name__)
 application.debug = True
@@ -24,7 +24,15 @@ application.config["SESSION_COOKIE_SAMESITE"] = None
 CORS(application, supports_credentials=True)
 
 
-@application.route("/", methods=["GET", "POST"])
+@application.route("/")
+def get_sports():
+    response = list(map(
+        (lambda sport: {**sport, 'supported': sport["sportId"] in SPORT_ID_TO_PYDFS_SPORT}), sports()['sports']))
+
+    return json.dumps(response)
+
+
+@application.route("/contests", methods=["GET", "POST"])
 def get_contests():
     json = request.get_json()
 
@@ -32,50 +40,59 @@ def get_contests():
         sport = json.get('sport')
 
         if sport:
-            return jsonpickle.encode(contests(sport=SportAPI[sport]))
+            return jsonpickle.encode(contests(sport=SPORT_ID_TO_SPORT[sport]))
 
     return {}
 
 
-@application.route("/players")
+@application.route("/players", methods=["GET", "POST"])
 def get_players():
-    id = request.args.get("id")
+    # json = request.get_json()
 
-    # Get players
-    players = available_players(id)["players"]
+    if request.args.get("id"):
+        # Get players
+        players = available_players(request.args.get("id"))["players"]
 
-    # def get_draftable_id(player):
-    #     return pydash.find(draftables(id)["draftables"], lambda _player: _player["id"] == player["id"])["draftable_id"]
+        return json.dumps({
+            "players": [{
+                "id": player["id"],
+                # "draftable_id": player["draftable_id"],
+                "first_name": player["first_name"],
+                "last_name": player["last_name"],
+                "position": player["position"]["name"],
+                "team": player["team"],
+                "salary": player["draft"]["salary"],
+                "points_per_contest": player["points_per_contest"],
+                "status": player["status"]
+            } for player in players]
+            # "teamIds": [y for x in teams for y in x]
+        })
 
-    # def map_player(id, player):
-    #     return {
-    #         **player,
-    #         "id": id
-    #     }
+    if request.files:
+        df = pd.read_csv(request.files.get('csv'))
 
-    # transformed_players = map(
-    #     map_player, [get_draftable_id(player) for player in players], players)
+        return json.dumps({
+            "players": [{
+                "id": player["ID"],
+                # "draftable_id": player["draftable_id"],
+                "first_name": player["Name"],
+                # "last_name": player["last_name"],
+                "position": player["Position"],
+                "team": player["TeamAbbrev"],
+                "salary": player["Salary"],
+                "points_per_contest": player["AvgPointsPerGame"],
+                # "status": player["status"]
+            } for index, player in df.iterrows()]
+        })
 
-    return json.dumps({
-        "players": [{
-            "id": player["id"],
-            # "draftable_id": player["draftable_id"],
-            "first_name": player["first_name"],
-            "last_name": player["last_name"],
-            "position": player["position"]["name"],
-            "team": player["team"],
-            "salary": player["draft"]["salary"],
-            "points_per_contest": player["points_per_contest"],
-            "status": player["status"]
-        } for player in players]
-        # "teamIds": [y for x in teams for y in x]
-    })
+    return {}
 
 
 @application.route("/optimize", methods=["GET", "POST"])
 def optimize():
     json = request.get_json()
 
+    import_type = json.get('import_type')
     generations = json.get('generations')
     lockedPlayers = json.get('lockedPlayers')
     players = json.get('players')
@@ -83,8 +100,8 @@ def optimize():
     session["sport"] = json.get('sport')
     session["draftGroupId"] = json.get('draftGroupId')
 
-    optimizer = get_optimizer(Site.DRAFTKINGS, get_sport(session.get('sport')))
-
+    optimizer = get_optimizer(
+        Site.DRAFTKINGS, SPORT_ID_TO_PYDFS_SPORT[session.get('sport')])
     optimizer.load_players([transform_player(player)
                             for player in players])
     # optimizer.load_players_from_csv("DKSalaries-nfl-sept-5.csv")
@@ -123,6 +140,7 @@ def optimize():
 
     try:
         optimize = optimizer.optimize(generations)
+
         exporter = JSONLineupExporter(optimize)
         exported_json = exporter.export()
 
