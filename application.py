@@ -151,9 +151,10 @@ def optimize():
 
         return merge_two_dicts(exported_json, response)
     except LineupOptimizerException as exception:
-        response["success"] = False
-        response["message"] = exception.message
-        return response
+        return Response(
+            exception.message,
+            status=400,
+        )
 
 
 @application.route("/export")
@@ -178,29 +179,3 @@ def exportCSV():
                                  "attachment; filename=DKSalaries.csv"})
 
     return {}
-
-
-# @ application.route("/stats")
-# def stats():
-#     playerId = players.find_players_by_full_name(
-#         request.args.get("player"))[0].get("id", None)
-
-#     player_info = json.loads(commonplayerinfo.CommonPlayerInfo(
-#         player_id=playerId).get_normalized_json()).get("CommonPlayerInfo", None)[0]
-#     player_headline_stats = json.loads(commonplayerinfo.CommonPlayerInfo(
-#         player_id=playerId).get_normalized_json()).get("PlayerHeadlineStats", None)[0]
-
-#     player_stats = json.loads(playerprofilev2.PlayerProfileV2(
-#         per_mode36="PerGame", player_id=playerId).get_normalized_json())
-
-#     teamId = player_info.get("TEAM_ID", None)
-
-#     profile_picture = "https://ak-static.cms.nba.com/wp-content/uploads/headshots/nba/%s/2019/260x190/%s.png" % (
-#         teamId, playerId)
-
-#     return {
-#         **player_info,
-#         **player_headline_stats,
-#         **player_stats,
-#         "profile_picture": profile_picture
-#     }
