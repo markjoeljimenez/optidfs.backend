@@ -10,7 +10,7 @@ import pandas as pd
 from flask import Flask, request, session, Response
 from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
-from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, JSONLineupExporter, TeamStack
+from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, JSONLineupExporter, TeamStack, PositionsStack
 from pydfs_lineup_optimizer.constants import PlayerRank
 from draft_kings.data import SPORT_ID_TO_SPORT
 from draft_kings.client import contests, available_players, draftables, draft_group_details, sports
@@ -131,17 +131,26 @@ def optimize():
             min_projected_ownership=rules["MIN_PROJECTED_OWNERSHIP"] if "MIN_PROJECTED_OWNERSHIP" in rules else None, max_projected_ownership=rules["MAX_PROJECTED_OWNERSHIP"] if "MAX_PROJECTED_OWNERSHIP" in rules else None)
 
     if "TEAM" in stacking:
-        if "NUMBER_OF_PLAYERS_TO_STACK" in stacking["TEAM"]:
+        team = stacking["TEAM"]
+
+        if "NUMBER_OF_PLAYERS_TO_STACK" in team:
             optimizer.add_stack(
-                TeamStack(stacking["TEAM"]["NUMBER_OF_PLAYERS_TO_STACK"],
-                          for_teams=stacking["TEAM"]["FROM_TEAMS"] if "FROM_TEAMS" in stacking else None,
-                          for_positions=stacking["TEAM"]["FROM_POSITIONS"] if "FROM_POSITIONS" in stacking else None,
-                          spacing=stacking["TEAM"]["SPACING"] if "SPACING" in stacking else None,
-                          max_exposure=stacking["TEAM"]["MAX_EXPOSURE"] if "MAX_EXPOSURE" in stacking else None,
+                TeamStack(team["NUMBER_OF_PLAYERS_TO_STACK"],
+                          for_teams=team["FROM_TEAMS"] if "FROM_TEAMS" in team else None,
+                          for_positions=team["FROM_POSITIONS"] if "FROM_POSITIONS" in team else None,
+                          spacing=team["SPACING"] if "SPACING" in team else None,
+                          max_exposure=team["MAX_EXPOSURE"] if "MAX_EXPOSURE" in team else None,
                           max_exposure_per_team={
-                    stacking["TEAM"]["MAX_EXPOSURE_PER_TEAM"]["team"]: stacking["TEAM"]["MAX_EXPOSURE_PER_TEAM"]["exposure"]} if "MAX_EXPOSURE_PER_TEAM" in stacking else None
+                    team["MAX_EXPOSURE_PER_TEAM"]["team"]: team["MAX_EXPOSURE_PER_TEAM"]["exposure"]} if "MAX_EXPOSURE_PER_TEAM" in team else None
                 )
             )
+
+    if "POSITION" in stacking:
+        position = stacking["POSITION"]
+
+        if "NUMBER_OF_POSITIONS" in position:
+            optimizer.add_stack(PositionsStack(
+                position["NUMBER_OF_POSITIONS"]))
 
     if lockedPlayers is not None:
         for player in lockedPlayers:
