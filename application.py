@@ -10,7 +10,7 @@ import pandas as pd
 from flask import Flask, request, session, Response
 from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
-from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, JSONLineupExporter
+from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, JSONLineupExporter, TeamStack
 from pydfs_lineup_optimizer.constants import PlayerRank
 from draft_kings.data import SPORT_ID_TO_SPORT
 from draft_kings.client import contests, available_players, draftables, draft_group_details, sports
@@ -19,7 +19,6 @@ from utils import SPORT_ID_TO_PYDFS_SPORT, transform_player, merge_two_dicts, ge
 application = Flask(__name__)
 application.debug = True
 application.config["SECRET_KEY"] = environ.get("SECRET_KEY")
-# application.config["SESSION_TYPE"] = "filesystem"
 application.config["SESSION_COOKIE_HTTPONLY"] = False
 application.config["SESSION_COOKIE_SAMESITE"] = None
 
@@ -49,8 +48,6 @@ def get_contests():
 
 @application.route("/players", methods=["GET", "POST"])
 def get_players():
-    # json = request.get_json()
-
     if request.args.get("id"):
         # Get players
         players = available_players(request.args.get("id"))["players"]
@@ -58,7 +55,6 @@ def get_players():
         return json.dumps({
             "players": [{
                 "id": player["id"],
-                # "draftable_id": player["draftable_id"],
                 "first_name": player["first_name"],
                 "last_name": player["last_name"],
                 "position": player["position"]["name"],
@@ -67,7 +63,6 @@ def get_players():
                 "points_per_contest": player["points_per_contest"],
                 "status": player["status"]
             } for player in players]
-            # "teamIds": [y for x in teams for y in x]
         })
 
     if request.files:
@@ -76,14 +71,12 @@ def get_players():
         return json.dumps({
             "players": [{
                 "id": player["ID"],
-                # "draftable_id": player["draftable_id"],
                 "first_name": player["Name"].split()[0],
                 "last_name": player["Name"].split()[1] if len(player["Name"].split()) > 1 else "",
                 "position": player["Position"],
                 "team": player["TeamAbbrev"],
                 "salary": player["Salary"],
                 "points_per_contest": player["AvgPointsPerGame"],
-                # "status": player["status"]
             } for index, player in df.iterrows()]
         })
 
@@ -97,6 +90,7 @@ def optimize():
     lockedPlayers = json.get("lockedPlayers")
     players = json.get("players")
     rules = json.get("rules")
+    stacking = json.get("stacking")
     session["sport"] = SPORT_ID_TO_PYDFS_SPORT[json.get("sport")]
     session["draftGroupId"] = json.get("draftGroupId")
 
@@ -105,6 +99,8 @@ def optimize():
     optimizer.load_players([transform_player(player)
                             for player in players])
     # optimizer.load_players_from_csv("DKSalaries-nfl-sept-5.csv")
+
+    print(stacking)
 
     response = {
         "success": True,
@@ -134,6 +130,12 @@ def optimize():
         optimizer.set_projected_ownership(
             min_projected_ownership=rules["MIN_PROJECTED_OWNERSHIP"] if "MIN_PROJECTED_OWNERSHIP" in rules else None, max_projected_ownership=rules["MAX_PROJECTED_OWNERSHIP"] if "MAX_PROJECTED_OWNERSHIP" in rules else None)
 
+    if "NUMBER_OF_PLAYERS_TO_STACK" in stacking:
+        optimizer.add_stack(
+            TeamStack(stacking["NUMBER_OF_PLAYERS_TO_STACK"],
+                      for_teams=stacking["FROM_TEAMS"] if "FROM_TEAMS" in stacking else None),
+        )
+
     if lockedPlayers is not None:
         for player in lockedPlayers:
             optimizer.add_player_to_lineup(optimizer.get_player_by_id(player))
@@ -146,36 +148,29 @@ def optimize():
 
         session["lineups"] = exported_json["lineups"]
 
-        # csv_exporter = DraftKingsCSVLineupExporter(optimize)
-        # csv_exporter.export("result.csv", lambda player: player.id)
-
         return merge_two_dicts(exported_json, response)
     except LineupOptimizerException as exception:
         return Response(
             exception.message,
-            status=400,
+            status=500,
         )
 
 
 @application.route("/export")
 def exportCSV():
-    print(session)
+    try:
+        if "lineups" in session:
+            lineups = session.get("lineups")
+            sport = session.get("sport")
 
-    if "lineups" in session:
-        lineups = session.get("lineups")
-        # draftGroupId = session.get("draftGroupId")
-        sport = session.get("sport")
+            csv = generate_csv_from_csv(lineups, sport)
 
-        # csv = generate_csv(lineups, draftGroupId, sport)
-        csv = generate_csv_from_csv(lineups, sport)
-
-        # response = make_response(csv)
-        # response.headers["Content-Disposition"] = "attachment; filename=DKSalaries.csv"
-        # response.headers["Content-type"] = "text/csv"
-
-        return Response(csv,
-                        mimetype="text/csv",
-                        headers={"Content-disposition":
-                                 "attachment; filename=DKSalaries.csv"})
-
-    return {}
+            return Response(csv,
+                            mimetype="text/csv",
+                            headers={"Content-disposition":
+                                     "attachment; filename=DKSalaries.csv"})
+    except:
+        return Response(
+            'Unable to generate CSV',
+            status=400,
+        )
