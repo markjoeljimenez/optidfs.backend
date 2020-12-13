@@ -133,7 +133,9 @@ def optimize():
     if "NUMBER_OF_PLAYERS_TO_STACK" in stacking:
         optimizer.add_stack(
             TeamStack(stacking["NUMBER_OF_PLAYERS_TO_STACK"],
-                      for_teams=stacking["FROM_TEAMS"] if "FROM_TEAMS" in stacking else None),
+                      for_teams=stacking["FROM_TEAMS"] if "FROM_TEAMS" in stacking else None,
+                      for_positions=stacking["FROM_POSITIONS"] if "FROM_POSITIONS" in stacking else None
+                      )
         )
 
     if lockedPlayers is not None:
