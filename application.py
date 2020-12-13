@@ -135,7 +135,8 @@ def optimize():
             TeamStack(stacking["NUMBER_OF_PLAYERS_TO_STACK"],
                       for_teams=stacking["FROM_TEAMS"] if "FROM_TEAMS" in stacking else None,
                       for_positions=stacking["FROM_POSITIONS"] if "FROM_POSITIONS" in stacking else None,
-                      spacing=stacking["SPACING"] if "SPACING" in stacking else None
+                      spacing=stacking["SPACING"] if "SPACING" in stacking else None,
+                      max_exposure=stacking["MAX_EXPOSURE"] if "MAX_EXPOSURE" in stacking else None
                       )
         )
 
