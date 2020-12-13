@@ -130,17 +130,18 @@ def optimize():
         optimizer.set_projected_ownership(
             min_projected_ownership=rules["MIN_PROJECTED_OWNERSHIP"] if "MIN_PROJECTED_OWNERSHIP" in rules else None, max_projected_ownership=rules["MAX_PROJECTED_OWNERSHIP"] if "MAX_PROJECTED_OWNERSHIP" in rules else None)
 
-    if "NUMBER_OF_PLAYERS_TO_STACK" in stacking:
-        optimizer.add_stack(
-            TeamStack(stacking["NUMBER_OF_PLAYERS_TO_STACK"],
-                      for_teams=stacking["FROM_TEAMS"] if "FROM_TEAMS" in stacking else None,
-                      for_positions=stacking["FROM_POSITIONS"] if "FROM_POSITIONS" in stacking else None,
-                      spacing=stacking["SPACING"] if "SPACING" in stacking else None,
-                      max_exposure=stacking["MAX_EXPOSURE"] if "MAX_EXPOSURE" in stacking else None,
-                      max_exposure_per_team={
-                          stacking["MAX_EXPOSURE_PER_TEAM"]["team"]: stacking["MAX_EXPOSURE_PER_TEAM"]["exposure"]} if "MAX_EXPOSURE_PER_TEAM" in stacking else None
-                      )
-        )
+    if "TEAM" in stacking:
+        if "NUMBER_OF_PLAYERS_TO_STACK" in stacking["TEAM"]:
+            optimizer.add_stack(
+                TeamStack(stacking["TEAM"]["NUMBER_OF_PLAYERS_TO_STACK"],
+                          for_teams=stacking["TEAM"]["FROM_TEAMS"] if "FROM_TEAMS" in stacking else None,
+                          for_positions=stacking["TEAM"]["FROM_POSITIONS"] if "FROM_POSITIONS" in stacking else None,
+                          spacing=stacking["TEAM"]["SPACING"] if "SPACING" in stacking else None,
+                          max_exposure=stacking["TEAM"]["MAX_EXPOSURE"] if "MAX_EXPOSURE" in stacking else None,
+                          max_exposure_per_team={
+                    stacking["TEAM"]["MAX_EXPOSURE_PER_TEAM"]["team"]: stacking["TEAM"]["MAX_EXPOSURE_PER_TEAM"]["exposure"]} if "MAX_EXPOSURE_PER_TEAM" in stacking else None
+                )
+            )
 
     if lockedPlayers is not None:
         for player in lockedPlayers:
