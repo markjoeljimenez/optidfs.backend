@@ -151,7 +151,10 @@ def optimize():
         if "NUMBER_OF_POSITIONS" in position:
             optimizer.add_stack(PositionsStack(
                 position["NUMBER_OF_POSITIONS"],
-                for_teams=position["FOR_TEAMS"] if "FOR_TEAMS" in position else None))
+                for_teams=position["FOR_TEAMS"] if "FOR_TEAMS" in position else None,
+                max_exposure=position["MAX_EXPOSURE"] if "MAX_EXPOSURE" in position else None)
+                max_exposure_per_team={
+                position["MAX_EXPOSURE_PER_TEAM"]["team"]: position["MAX_EXPOSURE_PER_TEAM"]["exposure"]} if "MAX_EXPOSURE_PER_TEAM" in position else None),
 
     if lockedPlayers is not None:
         for player in lockedPlayers:
@@ -173,7 +176,7 @@ def optimize():
         )
 
 
-@application.route("/export")
+@ application.route("/export")
 def exportCSV():
     try:
         if "lineups" in session:
