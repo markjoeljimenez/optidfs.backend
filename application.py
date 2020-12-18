@@ -27,8 +27,13 @@ CORS(application, supports_credentials=True)
 
 @application.route("/")
 def get_sports():
+    # "positions": get_positions()
     response = list(map(
-        (lambda sport: {**sport, "supported": sport["sportId"] in SPORT_ID_TO_PYDFS_SPORT}), sports()["sports"]))
+        (lambda sport: {
+            **sport,
+            "supported": sport["sportId"] in SPORT_ID_TO_PYDFS_SPORT,
+            "positions": SPORT_ID_TO_PYDFS_SPORT[sport["sportId"]]["positions"] if sport["sportId"] in SPORT_ID_TO_PYDFS_SPORT else None
+        }), sports()["sports"]))
 
     return json.dumps(response)
 
