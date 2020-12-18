@@ -10,7 +10,7 @@ import pandas as pd
 from flask import Flask, request, session, Response
 from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
-from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, JSONLineupExporter, TeamStack, PositionsStack
+from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, JSONLineupExporter, TeamStack, PositionsStack, PlayersGroup, Stack
 from pydfs_lineup_optimizer.constants import PlayerRank
 from draft_kings.data import SPORT_ID_TO_SPORT
 from draft_kings.client import contests, available_players, draftables, draft_group_details, sports
@@ -152,9 +152,25 @@ def optimize():
             optimizer.add_stack(PositionsStack(
                 position["NUMBER_OF_POSITIONS"],
                 for_teams=position["FOR_TEAMS"] if "FOR_TEAMS" in position else None,
-                max_exposure=position["MAX_EXPOSURE"] if "MAX_EXPOSURE" in position else None)
-                max_exposure_per_team={
-                position["MAX_EXPOSURE_PER_TEAM"]["team"]: position["MAX_EXPOSURE_PER_TEAM"]["exposure"]} if "MAX_EXPOSURE_PER_TEAM" in position else None),
+                max_exposure=position["MAX_EXPOSURE"] if "MAX_EXPOSURE" in position else None),
+                max_exposure_per_team={position["MAX_EXPOSURE_PER_TEAM"]["team"]: position["MAX_EXPOSURE_PER_TEAM"]["exposure"]} if "MAX_EXPOSURE_PER_TEAM" in position else None),
+
+    if "CUSTOM" in stacking:
+        custom = stacking["CUSTOM"]
+
+        if "STACKS" in custom:
+            # Only get first stack for now
+            stacks = custom["STACKS"][0]
+
+            if "players" in stacks:
+                players = stacks["players"]
+
+                group = PlayersGroup([
+                    optimizer.get_player_by_name(f'{player["first_name"]} {player["last_name"]}') for player in players])
+
+                print(group)
+
+                optimizer.add_stack(Stack([group]))
 
     if lockedPlayers is not None:
         for player in lockedPlayers:
