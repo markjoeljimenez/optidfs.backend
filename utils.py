@@ -49,7 +49,7 @@ SPORT_ID_TO_PYDFS_SPORT = {
     },
     # # : Sport.ARENA_FOOTBALL_LEAGUE,
     19: {
-        "sport": Sport.CS
+        "sport": Sport.CS,
         "positions": ["CPT", "FLEX", "FLEX", "FLEX", "FLEX", "FLEX"]
     }
 }
@@ -62,6 +62,7 @@ def merge_two_dicts(x, y):
 
 
 def transform_player(player):
+    # print(player)
     player = Player(
         player["id"],
         player["first_name"],

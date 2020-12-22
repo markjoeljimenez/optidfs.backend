@@ -13,7 +13,7 @@ from flask_cors import CORS
 from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, JSONLineupExporter, TeamStack, PositionsStack, PlayersGroup, Stack
 from draft_kings.data import SPORT_ID_TO_SPORT
 from draft_kings.client import contests, available_players, draftables, draft_group_details, sports
-from utils import SPORT_ID_TO_PYDFS_SPORT, transform_player, merge_two_dicts, generate_csv, get_positions, generate_csv_from_csv
+from utils import SPORT_ID_TO_PYDFS_SPORT, transform_player, merge_two_dicts, generate_csv, generate_csv_from_csv
 
 application = Flask(__name__)
 application.debug = True
@@ -26,8 +26,6 @@ CORS(application, supports_credentials=True)
 
 @application.route("/")
 def get_sports():
-    # "positions": get_positions()
-    print(sports()["sports"])
     response = list(map(
         (lambda sport: {
             **sport,
@@ -78,6 +76,7 @@ def get_players():
                 "id": player["ID"],
                 "first_name": player["Name"].split()[0],
                 "last_name": player["Name"].split()[1] if len(player["Name"].split()) > 1 else "",
+                # NTS: player["Position"] is changing to player["Roster Position"] due to "FLEX"
                 "position": player["Position"],
                 "team": player["TeamAbbrev"],
                 "salary": player["Salary"],
@@ -96,21 +95,14 @@ def optimize():
     players = json.get("players")
     rules = json.get("rules")
     stacking = json.get("stacking")
-    session["sport"] = SPORT_ID_TO_PYDFS_SPORT[json.get("sport")]
+    session["sport"] = json.get("sport")
     session["draftGroupId"] = json.get("draftGroupId")
 
     optimizer = get_optimizer(
-        Site.DRAFTKINGS, session.get("sport")["sport"])
+        Site.DRAFTKINGS, SPORT_ID_TO_PYDFS_SPORT[session.get("sport")]["sport"])
     optimizer.load_players([transform_player(player)
                             for player in players])
-    # optimizer.load_players_from_csv("DKSalaries-nfl-sept-5.csv")
-
     # print(stacking)
-
-    response = {
-        "success": True,
-        "message": None
-    }
 
     if "NUMBER_OF_PLAYERS_FROM_SAME_TEAM" in rules:
         for team in rules["NUMBER_OF_PLAYERS_FROM_SAME_TEAM"]:
@@ -203,7 +195,7 @@ def optimize():
 
         session["lineups"] = exported_json["lineups"]
 
-        return merge_two_dicts(exported_json, response)
+        return exported_json
     except LineupOptimizerException as exception:
         return Response(
             exception.message,
