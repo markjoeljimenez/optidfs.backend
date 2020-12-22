@@ -49,8 +49,8 @@ SPORT_ID_TO_PYDFS_SPORT = {
     },
     # # : Sport.ARENA_FOOTBALL_LEAGUE,
     19: {
-        "sport": Sport.CS
-        positions: ["CPT", "FLEX", "FLEX", "FLEX", "FLEX", "FLEX"]
+        "sport": Sport.CS,
+        "positions": ["CPT", "FLEX", "FLEX", "FLEX", "FLEX", "FLEX"]
     }
 }
 
