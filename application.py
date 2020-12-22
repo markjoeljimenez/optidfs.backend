@@ -27,8 +27,6 @@ CORS(application, supports_credentials=True)
 
 @application.route("/")
 def get_sports():
-    # "positions": get_positions()
-    print(sports()["sports"])
     response = list(map(
         (lambda sport: {**sport, "supported": sport["sportId"] in SPORT_ID_TO_PYDFS_SPORT}), sports()["sports"]))
 
@@ -52,43 +50,48 @@ def get_contests():
 def get_players():
     # json = request.get_json()
 
-    if request.args.get("id"):
-        # Get players
-        players = available_players(request.args.get("id"))["players"]
+    # if request.args.get("id"):
+    #     # Get players
+    #     players = available_players(request.args.get("id"))["players"]
 
-        return json.dumps({
-            "players": [{
-                "id": player["id"],
-                # "draftable_id": player["draftable_id"],
-                "first_name": player["first_name"],
-                "last_name": player["last_name"],
-                "position": player["position"]["name"],
-                "team": player["team"],
-                "salary": player["draft"]["salary"],
-                "points_per_contest": player["points_per_contest"],
-                "status": player["status"]
-            } for player in players]
-            # "teamIds": [y for x in teams for y in x]
-        })
+    #     return json.dumps({
+    #         "players": [{
+    #             "id": player["id"],
+    #             # "draftable_id": player["draftable_id"],
+    #             "first_name": player["first_name"],
+    #             "last_name": player["last_name"],
+    #             "position": player["position"]["name"],
+    #             "team": player["team"],
+    #             "salary": player["draft"]["salary"],
+    #             "points_per_contest": player["points_per_contest"],
+    #             "status": player["status"]
+    #         } for player in players]
+    #         # "teamIds": [y for x in teams for y in x]
+    #     })
 
-    if request.files:
-        df = pd.read_csv(request.files.get("csv"))
+    try:
+        if request.files:
+            df = pd.read_csv(request.files.get("csv"))
 
-        return json.dumps({
-            "players": [{
-                "id": player["ID"],
-                # "draftable_id": player["draftable_id"],
-                "first_name": player["Name"].split()[0],
-                "last_name": player["Name"].split()[1] if len(player["Name"].split()) > 1 else "",
-                "position": player["Position"],
-                "team": player["TeamAbbrev"],
-                "salary": player["Salary"],
-                "points_per_contest": player["AvgPointsPerGame"],
-                # "status": player["status"]
-            } for index, player in df.iterrows()]
-        })
-
-    return {}
+            return json.dumps({
+                "players": [{
+                    "id": player["ID"],
+                    # "draftable_id": player["draftable_id"],
+                    "first_name": player["Name"].split()[0],
+                    "last_name": player["Name"].split()[1] if len(player["Name"].split()) > 1 else "",
+                    "position": player["Position"],
+                    "team": player["TeamAbbrev"],
+                    "salary": player["Salary"],
+                    "points_per_contest": player["AvgPointsPerGame"],
+                    "draft_positions": player["Roster Position"]
+                    # "status": player["status"]
+                } for index, player in df.iterrows()]
+            })
+    except:
+        return Response(
+            "Unable to get players",
+            status=400,
+        )
 
 
 @application.route("/optimize", methods=["GET", "POST"])
@@ -160,8 +163,6 @@ def optimize():
 
 @application.route("/export")
 def exportCSV():
-    print(session)
-
     if "lineups" in session:
         lineups = session.get("lineups")
         # draftGroupId = session.get("draftGroupId")
