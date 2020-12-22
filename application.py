@@ -10,8 +10,7 @@ import pandas as pd
 from flask import Flask, request, session, Response
 from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
-from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, JSONLineupExporter
-from pydfs_lineup_optimizer.constants import PlayerRank
+from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, JSONLineupExporter, TeamStack, PositionsStack, PlayersGroup, Stack
 from draft_kings.data import SPORT_ID_TO_SPORT
 from draft_kings.client import contests, available_players, draftables, draft_group_details, sports
 from utils import SPORT_ID_TO_PYDFS_SPORT, transform_player, merge_two_dicts, generate_csv, get_positions, generate_csv_from_csv
@@ -28,6 +27,8 @@ CORS(application, supports_credentials=True)
 
 @application.route("/")
 def get_sports():
+    # "positions": get_positions()
+    print(sports()["sports"])
     response = list(map(
         (lambda sport: {**sport, "supported": sport["sportId"] in SPORT_ID_TO_PYDFS_SPORT}), sports()["sports"]))
 

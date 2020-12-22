@@ -3,7 +3,6 @@ import pydash
 import io
 import pandas as pd
 from pydfs_lineup_optimizer import Player, Sport
-from pydfs_lineup_optimizer.constants import PlayerRank
 from draft_kings.client import draftables
 
 SPORT_ID_TO_PYDFS_SPORT = {
@@ -49,6 +48,10 @@ SPORT_ID_TO_PYDFS_SPORT = {
         "positions": ["P", "P", "P", "P", "P", "P"]
     },
     # # : Sport.ARENA_FOOTBALL_LEAGUE,
+    19: {
+        "sport": Sport.CS
+        positions: ["CPT", "FLEX", "FLEX", "FLEX", "FLEX", "FLEX"]
+    }
 }
 
 
@@ -68,7 +71,6 @@ def transform_player(player):
         float(player["salary"]),
         float(player["points_per_contest"]),
         player.get("status") == "O",
-        PlayerRank.REGULAR,
         None,
         player.get("min_exposure"),
         player.get("projected_ownership")
@@ -88,7 +90,6 @@ def transform_player_from_csv(player):
         float(player["AvgPointsPerGame"]),
         # True if player["status"] == "O" else False,
         False,
-        PlayerRank.REGULAR,
         None,
         # player["min_exposure"] if "min_exposure" in player else None,
         # player["projected_ownership"] if "projected_ownership" in player else None
