@@ -3,12 +3,13 @@ import csv
 import json
 import requests
 import jsonpickle
+import pandas as pd
 from flask import Flask, request, session, Response
 from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
 from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, JSONLineupExporter, TeamStack, PositionsStack, PlayersGroup, Stack
 from draft_kings.data import SPORT_ID_TO_SPORT
-from draft_kings.client import contests
+from draft_kings.client import contests, sports
 from utils import SPORT_ID_TO_PYDFS_SPORT, transform_player, generate_csv_from_csv, get_available_players
 
 application = Flask(__name__)
@@ -23,19 +24,10 @@ CORS(application, supports_credentials=True)
 @application.route("/")
 def get_sports():
     try:
-        response = requests.get(
-            'https://api.draftkings.com/sites/CA-DK/draftgroups/v3/draftgroups?states=upcoming&format=json').json()
+        response = list(map(
+            (lambda sport: {**sport, "supported": sport["sportId"] in SPORT_ID_TO_PYDFS_SPORT}), sports()["sports"]))
 
-        return {
-            **response,
-            "sports": list(
-                map(
-                    (lambda sport: {
-                        **sport, "supported": sport["sportId"] in SPORT_ID_TO_PYDFS_SPORT
-                    }),
-                    response["sports"])
-            )
-        }
+        return json.dumps(response)
     except:
         return Response(
             "Unable to reach servers",
@@ -81,7 +73,7 @@ def get_players():
                 } for index, player in players.iterrows()]
             })
 
-        elif request.files:
+        if request.files:
             df = pd.read_csv(request.files.get("csv"))
 
             return json.dumps({
