@@ -3,7 +3,7 @@ import pydash
 import io
 import pandas as pd
 from pydfs_lineup_optimizer import Player, Sport
-from draft_kings.client import draftables
+from draft_kings.client import draftables, draft_group_details
 
 SPORT_ID_TO_PYDFS_SPORT = {
     1: {
@@ -148,3 +148,13 @@ def generate_csv_from_csv(lineups, sport):
         lineup_writer.writerow(row)
 
     return csvfile.getvalue()
+
+
+def get_available_players(draft_group_id):
+    contest_id = draft_group_details(draft_group_id)["contest"]["type_id"]
+    url = f'https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId={contest_id}&draftGroupId={draft_group_id}'
+
+    df = pd.read_csv(url)
+    df.head()
+
+    return df
