@@ -55,14 +55,9 @@ def get_contests():
 
 @ application.route("/players", methods=["GET", "POST"])
 def get_players():
-    data = request.get_json()
-
-    draftGroupId = data.get("id")
-    # session["gameType"] = data.get("game_type")
-
     try:
-        if draftGroupId:
-            players = get_available_players(draftGroupId)
+        if request.args.get("id"):
+            players = get_available_players(request.args.get("id"))
 
             return json.dumps({
                 "players": [{
