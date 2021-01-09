@@ -3,7 +3,7 @@ import pydash
 import io
 import pandas as pd
 from pydfs_lineup_optimizer import Player, Sport
-from draft_kings.client import draftables
+from draft_kings.client import draftables, draft_group_details
 
 SPORT_ID_TO_PYDFS_SPORT = {
     1: {
@@ -66,7 +66,7 @@ def transform_player(player):
         player["id"],
         player["first_name"],
         player["last_name"],
-        player["draft_positions"].split("/"),
+        player["position"].split("/"),
         player["team"],
         float(player["salary"]),
         float(player["points_per_contest"]),
@@ -74,27 +74,6 @@ def transform_player(player):
         None,
         player.get("min_exposure"),
         player.get("projected_ownership")
-    )
-
-    return player
-
-
-def transform_player_from_csv(player):
-    player = Player(
-        player["ID"],
-        player['Name'].split()[0],
-        player['Name'].split()[1] if len(player['Name'].split()) > 1 else '',
-        player["Position"].split("/"),
-        player["TeamAbbrev"],
-        float(player["Salary"]),
-        float(player["AvgPointsPerGame"]),
-        # True if player["status"] == "O" else False,
-        False,
-        None,
-        # player["min_exposure"] if "min_exposure" in player else None,
-        # player["projected_ownership"] if "projected_ownership" in player else None
-        None,
-        None
     )
 
     return player
@@ -148,3 +127,13 @@ def generate_csv_from_csv(lineups, sport):
         lineup_writer.writerow(row)
 
     return csvfile.getvalue()
+
+
+def get_available_players(draft_group_id):
+    contest_id = draft_group_details(draft_group_id)["contest"]["type_id"]
+    url = f'https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId={contest_id}&draftGroupId={draft_group_id}'
+
+    df = pd.read_csv(url)
+    df.head()
+
+    return df
