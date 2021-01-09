@@ -10,7 +10,7 @@ from flask_cors import CORS
 from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, JSONLineupExporter, TeamStack, PositionsStack, PlayersGroup, Stack
 from draft_kings.data import SPORT_ID_TO_SPORT
 from draft_kings.client import contests, sports
-from utils import SPORT_ID_TO_PYDFS_SPORT, transform_player, generate_csv_from_csv, get_available_players
+from utils import SPORT_ID_TO_PYDFS_SPORT, transform_player, generate_csv_from_csv, get_available_players, is_captain_mode
 
 application = Flask(__name__)
 application.debug = True
@@ -55,10 +55,14 @@ def get_contests():
 
 @ application.route("/players", methods=["GET", "POST"])
 def get_players():
+    data = request.get_json()
+
+    draftGroupId = data.get("id")
+    # session["gameType"] = data.get("game_type")
+
     try:
-        if request.args.get("id"):
-            # Get players
-            players = get_available_players(request.args.get("id"))
+        if draftGroupId:
+            players = get_available_players(draftGroupId)
 
             return json.dumps({
                 "players": [{
@@ -69,7 +73,7 @@ def get_players():
                     "team": player["TeamAbbrev"],
                     "salary": player["Salary"],
                     "points_per_contest": player["AvgPointsPerGame"],
-                    # "draft_positions": player["Roster Position"]
+                    "draft_positions": player["Roster Position"]
                 } for index, player in players.iterrows()]
             })
 
@@ -102,13 +106,13 @@ def optimize():
     lockedPlayers = json.get("lockedPlayers")
     players = json.get("players")
     rules = json.get("rules")
+    gameType = json.get("gameType")
     session["sport"] = SPORT_ID_TO_PYDFS_SPORT[json.get("sport")]
 
     optimizer = get_optimizer(
-        Site.DRAFTKINGS, session.get("sport")["sport"])
-    optimizer.load_players([transform_player(player)
+        is_captain_mode(gameType), session.get("sport")["sport"])
+    optimizer.load_players([transform_player(player, gameType)
                             for player in players])
-    # optimizer.load_players_from_csv('DKSalaries.csv')
 
     if "NUMBER_OF_PLAYERS_FROM_SAME_TEAM" in rules:
         for team in rules["NUMBER_OF_PLAYERS_FROM_SAME_TEAM"]:
