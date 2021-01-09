@@ -66,7 +66,7 @@ def transform_player(player):
         player["id"],
         player["first_name"],
         player["last_name"],
-        player["draft_positions"].split("/"),
+        player["position"].split("/"),
         player["team"],
         float(player["salary"]),
         float(player["points_per_contest"]),
@@ -74,27 +74,6 @@ def transform_player(player):
         None,
         player.get("min_exposure"),
         player.get("projected_ownership")
-    )
-
-    return player
-
-
-def transform_player_from_csv(player):
-    player = Player(
-        player["ID"],
-        player['Name'].split()[0],
-        player['Name'].split()[1] if len(player['Name'].split()) > 1 else '',
-        player["Position"].split("/"),
-        player["TeamAbbrev"],
-        float(player["Salary"]),
-        float(player["AvgPointsPerGame"]),
-        # True if player["status"] == "O" else False,
-        False,
-        None,
-        # player["min_exposure"] if "min_exposure" in player else None,
-        # player["projected_ownership"] if "projected_ownership" in player else None
-        None,
-        None
     )
 
     return player

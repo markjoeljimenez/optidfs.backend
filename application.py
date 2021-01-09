@@ -69,7 +69,7 @@ def get_players():
                     "team": player["TeamAbbrev"],
                     "salary": player["Salary"],
                     "points_per_contest": player["AvgPointsPerGame"],
-                    "draft_positions": player["Roster Position"]
+                    # "draft_positions": player["Roster Position"]
                 } for index, player in players.iterrows()]
             })
 
@@ -108,6 +108,7 @@ def optimize():
         Site.DRAFTKINGS, session.get("sport")["sport"])
     optimizer.load_players([transform_player(player)
                             for player in players])
+    # optimizer.load_players_from_csv('DKSalaries.csv')
 
     if "NUMBER_OF_PLAYERS_FROM_SAME_TEAM" in rules:
         for team in rules["NUMBER_OF_PLAYERS_FROM_SAME_TEAM"]:
