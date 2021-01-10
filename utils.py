@@ -2,7 +2,7 @@ import csv
 import pydash
 import io
 import pandas as pd
-from pydfs_lineup_optimizer import Player, Sport
+from pydfs_lineup_optimizer import Player, Sport, Site
 from draft_kings.client import draftables, draft_group_details
 
 SPORT_ID_TO_PYDFS_SPORT = {
@@ -61,20 +61,38 @@ def merge_two_dicts(x, y):
     return z
 
 
-def transform_player(player):
-    player = Player(
-        player["id"],
-        player["first_name"],
-        player["last_name"],
-        player["position"].split("/"),
-        player["team"],
-        float(player["salary"]),
-        float(player["points_per_contest"]),
-        player.get("status") == "O",
-        None,
-        player.get("min_exposure"),
-        player.get("projected_ownership")
-    )
+def transform_player(player, gameType):
+    if gameType == 'Showdown Captain Mode':
+        fppg_multiplier = 1.5 if player["draft_positions"] == 'CPT' else 1
+
+        player = Player(
+            player["id"],
+            player["first_name"],
+            player["last_name"],
+            player["draft_positions"].split("/"),
+            player["team"],
+            float(player["salary"]),
+            float(player["points_per_contest"]) * fppg_multiplier,
+            False,
+            None,
+            player.get("min_exposure"),
+            player.get("projected_ownership")
+        )
+
+    else:
+        player = Player(
+            player["id"],
+            player["first_name"],
+            player["last_name"],
+            player["position"].split("/"),
+            player["team"],
+            float(player["salary"]),
+            float(player["points_per_contest"]),
+            player.get("status") == "O",
+            None,
+            player.get("min_exposure"),
+            player.get("projected_ownership")
+        )
 
     return player
 
@@ -137,3 +155,7 @@ def get_available_players(draft_group_id):
     df.head()
 
     return df
+
+
+def is_captain_mode(gameType):
+    return Site.DRAFTKINGS_CAPTAIN_MODE if gameType == 'Showdown Captain Mode' else Site.DRAFTKINGS
