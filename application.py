@@ -1,19 +1,16 @@
 from os import environ
 import csv
-import io
 import json
-import re
 import requests
 import jsonpickle
-import pydash
 import pandas as pd
 from flask import Flask, request, session, Response
 from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
 from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, JSONLineupExporter, TeamStack, PositionsStack, PlayersGroup, Stack
 from draft_kings.data import SPORT_ID_TO_SPORT
-from draft_kings.client import contests, available_players, draftables, draft_group_details, sports
-from utils import SPORT_ID_TO_PYDFS_SPORT, transform_player, merge_two_dicts, generate_csv, generate_csv_from_csv
+from draft_kings.client import contests, sports
+from utils import SPORT_ID_TO_PYDFS_SPORT, transform_player, generate_csv_from_csv, get_available_players, is_captain_mode
 
 application = Flask(__name__)
 application.debug = True
@@ -26,60 +23,49 @@ CORS(application, supports_credentials=True)
 
 @application.route("/")
 def get_sports():
-    response = list(map(
-        (lambda sport: {
-            **sport,
-            "supported": sport["sportId"] in SPORT_ID_TO_PYDFS_SPORT,
-            "positions": SPORT_ID_TO_PYDFS_SPORT[sport["sportId"]]["positions"] if sport["sportId"] in SPORT_ID_TO_PYDFS_SPORT else None
-        }), sports()["sports"]))
+	try:
+		response = list(map(
+			(lambda sport: {
+				**sport,
+				"supported": sport["sportId"] in SPORT_ID_TO_PYDFS_SPORT,
+				"positions": SPORT_ID_TO_PYDFS_SPORT[sport["sportId"]]["positions"] if sport["sportId"] in SPORT_ID_TO_PYDFS_SPORT else None
+			}), sports()["sports"]))
 
-    return json.dumps(response)
+        return json.dumps(response)
+    except:
+        return Response(
+            "Unable to reach servers",
+            status=500,
+        )
 
 
-@application.route("/contests", methods=["GET", "POST"])
+@ application.route("/contests", methods=["GET", "POST"])
 def get_contests():
     json = request.get_json()
 
-    if json:
-        sport = json.get("sport")
-
-        if sport:
-            return jsonpickle.encode(contests(sport=SPORT_ID_TO_SPORT[sport]))
-
-    return {}
-
-
-@application.route("/players", methods=["GET", "POST"])
-def get_players():
-    # json = request.get_json()
-
-    # if request.args.get("id"):
-    #     # Get players
-    #     players = available_players(request.args.get("id"))["players"]
-
-    #     return json.dumps({
-    #         "players": [{
-    #             "id": player["id"],
-    #             # "draftable_id": player["draftable_id"],
-    #             "first_name": player["first_name"],
-    #             "last_name": player["last_name"],
-    #             "position": player["position"]["name"],
-    #             "team": player["team"],
-    #             "salary": player["draft"]["salary"],
-    #             "points_per_contest": player["points_per_contest"],
-    #             "status": player["status"]
-    #         } for player in players]
-    #         # "teamIds": [y for x in teams for y in x]
-    #     })
-
     try:
-        if request.files:
-            df = pd.read_csv(request.files.get("csv"))
+        if json:
+            sport = json.get("sport")
+
+            if sport:
+                return jsonpickle.encode(contests(sport=SPORT_ID_TO_SPORT[sport]))
+
+    except:
+        return Response(
+            "Unable to get contests",
+            status=500,
+        )
+
+
+@ application.route("/players", methods=["GET", "POST"])
+def get_players():
+    try:
+        if request.args.get("id"):
+            players = get_available_players(request.args.get("id"))
 
             return json.dumps({
                 "players": [{
                     "id": player["ID"],
-                    # "draftable_id": player["draftable_id"],
                     "first_name": player["Name"].split()[0],
                     "last_name": player["Name"].split()[1] if len(player["Name"].split()) > 1 else "",
                     "position": player["Position"],
@@ -87,13 +73,28 @@ def get_players():
                     "salary": player["Salary"],
                     "points_per_contest": player["AvgPointsPerGame"],
                     "draft_positions": player["Roster Position"]
-                    # "status": player["status"]
+                } for index, player in players.iterrows()]
+            })
+
+        if request.files:
+            df = pd.read_csv(request.files.get("csv"))
+
+            return json.dumps({
+                "players": [{
+                    "id": player["ID"],
+                    "first_name": player["Name"].split()[0],
+                    "last_name": player["Name"].split()[1] if len(player["Name"].split()) > 1 else "",
+                    "position": player["Position"],
+                    "team": player["TeamAbbrev"],
+                    "salary": player["Salary"],
+                    "points_per_contest": player["AvgPointsPerGame"],
+                    "draft_positions": player["Roster Position"]
                 } for index, player in df.iterrows()]
             })
     except:
         return Response(
             "Unable to get players",
-            status=400,
+            status=500,
         )
 
 
@@ -104,15 +105,15 @@ def optimize():
     lockedPlayers = json.get("lockedPlayers")
     players = json.get("players")
     rules = json.get("rules")
+    gameType = json.get("gameType")
     stacking = json.get("stacking")
     session["sport"] = json.get("sport")
     session["draftGroupId"] = json.get("draftGroupId")
 
     optimizer = get_optimizer(
-        Site.DRAFTKINGS, SPORT_ID_TO_PYDFS_SPORT[session.get("sport")]["sport"])
-    optimizer.load_players([transform_player(player)
+        is_captain_mode(gameType), session.get("sport")["sport"])
+    optimizer.load_players([transform_player(player, gameType)
                             for player in players])
-    # print(stacking)
 
     if "NUMBER_OF_PLAYERS_FROM_SAME_TEAM" in rules:
         for team in rules["NUMBER_OF_PLAYERS_FROM_SAME_TEAM"]:
@@ -229,5 +230,5 @@ def exportCSV():
     except:
         return Response(
             'Unable to generate CSV',
-            status=400,
+            status=500,
         )
