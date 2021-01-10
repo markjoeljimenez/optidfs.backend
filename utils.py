@@ -55,10 +55,10 @@ SPORT_ID_TO_PYDFS_SPORT = {
 }
 
 
-def merge_two_dicts(x, y):
-    z = x.copy()   # start with x"s keys and values
-    z.update(y)    # modifies z with y"s keys and values & returns None
-    return z
+# def merge_two_dicts(x, y):
+#     z = x.copy()   # start with x"s keys and values
+#     z.update(y)    # modifies z with y"s keys and values & returns None
+#     return z
 
 
 def transform_player(player, gameType):
@@ -114,23 +114,23 @@ def get_positions(sport):
         return Positions.SOCCER
 
 
-def generate_csv(lineups, draft_group_id, sport):
-    def get_draftable_id(id):
-        return pydash.find(draftables(draft_group_id)["draftables"], lambda _player: _player["id"] == id)["draftable_id"]
+# def generate_csv(lineups, draft_group_id, sport):
+#     def get_draftable_id(id):
+#         return pydash.find(draftables(draft_group_id)["draftables"], lambda _player: _player["id"] == id)["draftable_id"]
 
-    positions = get_positions(sport)
+#     positions = get_positions(sport)
 
-    csvfile = io.StringIO()
-    lineup_writer = csv.writer(csvfile, delimiter=',')
+#     csvfile = io.StringIO()
+#     lineup_writer = csv.writer(csvfile, delimiter=',')
 
-    for index, lineup in enumerate(lineups):
-        if index == 0:
-            header = [pos for pos in sport["positions"]]
-            lineup_writer.writerow(header)
-        row = [get_draftable_id(player) for player in lineup["players"]]
-        lineup_writer.writerow(row)
+#     for index, lineup in enumerate(lineups):
+#         if index == 0:
+#             header = [pos for pos in sport["positions"]]
+#             lineup_writer.writerow(header)
+#         row = [get_draftable_id(player) for player in lineup["players"]]
+#         lineup_writer.writerow(row)
 
-    return csvfile.getvalue()
+#     return csvfile.getvalue()
 
 
 def generate_csv_from_csv(lineups, sport):

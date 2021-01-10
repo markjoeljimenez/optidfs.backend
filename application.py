@@ -23,13 +23,13 @@ CORS(application, supports_credentials=True)
 
 @application.route("/")
 def get_sports():
-	try:
-		response = list(map(
-			(lambda sport: {
-				**sport,
-				"supported": sport["sportId"] in SPORT_ID_TO_PYDFS_SPORT,
-				"positions": SPORT_ID_TO_PYDFS_SPORT[sport["sportId"]]["positions"] if sport["sportId"] in SPORT_ID_TO_PYDFS_SPORT else None
-			}), sports()["sports"]))
+    try:
+        response = list(map(
+            (lambda sport: {
+                **sport,
+                "supported": sport["sportId"] in SPORT_ID_TO_PYDFS_SPORT,
+                "positions": SPORT_ID_TO_PYDFS_SPORT[sport["sportId"]]["positions"] if sport["sportId"] in SPORT_ID_TO_PYDFS_SPORT else None
+            }), sports()["sports"]))
 
         return json.dumps(response)
     except:
@@ -108,10 +108,12 @@ def optimize():
     gameType = json.get("gameType")
     stacking = json.get("stacking")
     session["sport"] = json.get("sport")
-    session["draftGroupId"] = json.get("draftGroupId")
+    # session["draftGroupId"] = json.get("draftGroupId")
+
+    print(SPORT_ID_TO_PYDFS_SPORT[session.get("sport")])
 
     optimizer = get_optimizer(
-        is_captain_mode(gameType), session.get("sport")["sport"])
+        is_captain_mode(gameType), SPORT_ID_TO_PYDFS_SPORT[session.get("sport")]["sport"])
     optimizer.load_players([transform_player(player, gameType)
                             for player in players])
 
@@ -214,7 +216,7 @@ def optimize():
         )
 
 
-@ application.route("/export")
+@application.route("/export")
 def exportCSV():
     try:
         if "lineups" in session:
