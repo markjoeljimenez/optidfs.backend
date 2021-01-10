@@ -110,8 +110,6 @@ def optimize():
     session["sport"] = json.get("sport")
     # session["draftGroupId"] = json.get("draftGroupId")
 
-    print(SPORT_ID_TO_PYDFS_SPORT[session.get("sport")])
-
     optimizer = get_optimizer(
         is_captain_mode(gameType), SPORT_ID_TO_PYDFS_SPORT[session.get("sport")]["sport"])
     optimizer.load_players([transform_player(player, gameType)

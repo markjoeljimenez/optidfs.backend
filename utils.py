@@ -62,7 +62,7 @@ SPORT_ID_TO_PYDFS_SPORT = {
 
 
 def transform_player(player, gameType):
-    if gameType == 'Showdown Captain Mode':
+    if 'Showdown' in gameType:
         fppg_multiplier = 1.5 if player["draft_positions"] == 'CPT' else 1
 
         player = Player(
@@ -158,4 +158,4 @@ def get_available_players(draft_group_id):
 
 
 def is_captain_mode(gameType):
-    return Site.DRAFTKINGS_CAPTAIN_MODE if gameType == 'Showdown Captain Mode' else Site.DRAFTKINGS
+    return Site.DRAFTKINGS_CAPTAIN_MODE if 'Showdown' in gameType else Site.DRAFTKINGS
