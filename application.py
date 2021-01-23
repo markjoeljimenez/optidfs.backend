@@ -1,16 +1,16 @@
+from datetime import datetime
+from draft_kings.client import contests, sports
+from draft_kings.data import SPORT_ID_TO_SPORT
+from flask import Flask, request, session, Response, jsonify
+from flask_cors import CORS
 from os import environ
+from pydfs_lineup_optimizer import get_optimizer, LineupOptimizerException, JSONLineupExporter
+from utils import SPORT_ID_TO_PYDFS_SPORT, transform_player, generate_csv_from_csv, get_available_players, is_captain_mode
 import csv
 import json
-import requests
 import jsonpickle
 import pandas as pd
-from flask import Flask, request, session, Response
-from flask_restful import Api, Resource, reqparse
-from flask_cors import CORS
-from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, JSONLineupExporter, TeamStack, PositionsStack, PlayersGroup, Stack
-from draft_kings.data import SPORT_ID_TO_SPORT
-from draft_kings.client import contests, sports
-from utils import SPORT_ID_TO_PYDFS_SPORT, transform_player, generate_csv_from_csv, get_available_players, is_captain_mode
+import requests
 
 application = Flask(__name__)
 application.debug = True
@@ -20,14 +20,23 @@ application.config["SESSION_COOKIE_SAMESITE"] = None
 
 CORS(application, supports_credentials=True)
 
+headers = {
+    "Ocp-Apim-Subscription-Key": environ.get("FANTASY_DATA_KEY")
+}
+
 
 @application.route("/")
 def get_sports():
     try:
-        response = list(map(
-            (lambda sport: {**sport, "supported": sport["sportId"] in SPORT_ID_TO_PYDFS_SPORT}), sports()["sports"]))
+        date = '2019-12-29'
 
-        return json.dumps(response)
+        # response = list(map(
+        #     (lambda sport: {**sport, "supported": sport["sportId"] in SPORT_ID_TO_PYDFS_SPORT}), sports()["sports"]))
+
+        # return json.dumps(response)
+
+        return jsonify(requests.get(
+            f'{environ.get("FANTASY_DATA_ENDPOINT")}/{date}', headers=headers).json())
     except:
         return Response(
             "Unable to reach servers",
