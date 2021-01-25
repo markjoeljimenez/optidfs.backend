@@ -221,7 +221,8 @@ def exportCSV():
             lineups = session.get("lineups")
             sport = session.get("sport")
 
-            csv = generate_csv_from_csv(lineups, sport)
+            csv = generate_csv_from_csv(
+                lineups, SPORT_ID_TO_PYDFS_SPORT[sport])
 
             return Response(csv,
                             mimetype="text/csv",
