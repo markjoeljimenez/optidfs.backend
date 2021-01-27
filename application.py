@@ -167,32 +167,20 @@ def optimize():
         custom = stacking["CUSTOM"]
 
         if "STACKS" in custom:
-            stacks = [player["players"] for player in custom["STACKS"]]
-
             groups = []
 
-            for stack in stacks:
+            for stack in custom["STACKS"]:
                 players = []
 
-                for player in stack:
+                for player in stack["players"]:
                     players.append(optimizer.get_player_by_name(
                         f'{player["first_name"]} {player["last_name"]}'))
 
-            if (len(groups) > 1):
-                optimizer.add_stack(Stack([groups]))
+                groups.append(PlayersGroup(
+                    players, max_exposure=stack["MAX_EXPOSURE"] if "MAX_EXPOSURE" in stack else None))
 
-            # Only get first stack for now
-            # stacks = custom["STACKS"][0]
-
-            # if "players" in stacks:
-            #     players = stacks["players"]
-
-            #     group = PlayersGroup([
-            #         optimizer.get_player_by_name(f'{player["first_name"]} {player["last_name"]}') for player in players])
-
-            #     print(group)
-
-            #     optimizer.add_stack(Stack([group]))
+            if (len(groups)):
+                optimizer.add_stack(Stack(groups))
 
     if lockedPlayers is not None:
         for player in lockedPlayers:
@@ -214,7 +202,7 @@ def optimize():
         )
 
 
-@application.route("/export")
+@ application.route("/export")
 def exportCSV():
     try:
         if "lineups" in session:
