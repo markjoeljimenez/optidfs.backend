@@ -167,20 +167,31 @@ def optimize():
         custom = stacking["CUSTOM"]
 
         if "STACKS" in custom:
+            stacks = []
             groups = []
 
             for stack in custom["STACKS"]:
                 players = []
 
+                print(stack)
+
                 for player in stack["players"]:
                     players.append(optimizer.get_player_by_name(
                         f'{player["first_name"]} {player["last_name"]}'))
 
-                groups.append(PlayersGroup(
-                    players, max_exposure=stack["MAX_EXPOSURE"] if "MAX_EXPOSURE" in stack else None))
+                # if (stack["TYPE"] == "stack"):
+                #     stacks.append(PlayersGroup(
+                #         players, max_exposure=stack["MAX_EXPOSURE"] if "MAX_EXPOSURE" in stack else None))
+
+                if (stack["TYPE"] == "group"):
+                    groups.append(PlayersGroup(
+                        players, max_from_group=stack["MAX_FROM_GROUP"] if "MAX_FROM_GROUP" in stack else None))
+
+            # if (len(stacks)):
+            #     optimizer.add_stack(Stack(stacks))
 
             if (len(groups)):
-                optimizer.add_stack(Stack(groups))
+                optimizer.add_players_group(groups)
 
     if lockedPlayers is not None:
         for player in lockedPlayers:
