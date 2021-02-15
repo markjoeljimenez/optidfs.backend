@@ -3,9 +3,6 @@
 1.  Create Python environment
 
     ```python
-        python3 -m venv env
-
-        (Windows)
         python -m venv env
     ```
 
@@ -27,6 +24,5 @@
 4.  Set Flask and run virtual environment
 
         ```python
-            set FLASK_APP=application.py
             flask run
         ```
