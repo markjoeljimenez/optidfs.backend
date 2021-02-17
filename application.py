@@ -103,6 +103,7 @@ def optimize():
     json = request.get_json()
 
     lockedPlayers = json.get("lockedPlayers")
+    excludedPlayers = json.get("excludedPlayers")
     players = json.get("players")
     rules = json.get("rules")
     gameType = json.get("gameType")
@@ -197,6 +198,10 @@ def optimize():
     if lockedPlayers is not None:
         for player in lockedPlayers:
             optimizer.add_player_to_lineup(optimizer.get_player_by_id(player))
+
+    if excludedPlayers is not None:
+        for player in excludedPlayers:
+            optimizer.remove_player(optimizer.get_player_by_id(player))
 
     try:
         optimize = optimizer.optimize(rules["NUMBER_OF_GENERATIONS"])
