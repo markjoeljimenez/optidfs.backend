@@ -102,8 +102,8 @@ def get_players():
 def optimize():
     json = request.get_json()
 
-    lockedPlayers = json.get("lockedPlayers")
-    excludedPlayers = json.get("excludedPlayers")
+    # lockedPlayers = json.get("lockedPlayers")
+    # excludedPlayers = json.get("excludedPlayers")
     players = json.get("players")
     rules = json.get("rules")
     gameType = json.get("gameType")
@@ -111,10 +111,18 @@ def optimize():
     session["sport"] = json.get("sport")
     # session["draftGroupId"] = json.get("draftGroupId")
 
-    optimizer = get_optimizer(
-        is_captain_mode(gameType), SPORT_ID_TO_PYDFS_SPORT[session.get("sport")]["sport"])
+    optimizer = get_optimizer(is_captain_mode(
+        gameType), SPORT_ID_TO_PYDFS_SPORT[session.get("sport")]["sport"])
     optimizer.load_players([transform_player(player, gameType)
-                            for player in players])
+                            for player in players["all"]])
+
+    if "locked" in players and players['locked'] is not None:
+        for player in players['locked']:
+            optimizer.add_player_to_lineup(optimizer.get_player_by_id(player))
+
+    if "excluded" in players and players["excluded"] is not None:
+        for player in players['excluded']:
+            optimizer.remove_player(optimizer.get_player_by_id(player))
 
     if "NUMBER_OF_PLAYERS_FROM_SAME_TEAM" in rules:
         for team in rules["NUMBER_OF_PLAYERS_FROM_SAME_TEAM"]:
@@ -194,14 +202,6 @@ def optimize():
             #     print(group)
 
             #     optimizer.add_stack(Stack([group]))
-
-    if lockedPlayers is not None:
-        for player in lockedPlayers:
-            optimizer.add_player_to_lineup(optimizer.get_player_by_id(player))
-
-    if excludedPlayers is not None:
-        for player in excludedPlayers:
-            optimizer.remove_player(optimizer.get_player_by_id(player))
 
     try:
         optimize = optimizer.optimize(rules["NUMBER_OF_GENERATIONS"])
