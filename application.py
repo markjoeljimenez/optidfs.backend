@@ -102,8 +102,6 @@ def get_players():
 def optimize():
     json = request.get_json()
 
-    lockedPlayers = json.get("lockedPlayers")
-    excludedPlayers = json.get("excludedPlayers")
     players = json.get("players")
     rules = json.get("rules")
     gameType = json.get("gameType")
@@ -111,13 +109,13 @@ def optimize():
     session["sport"] = json.get("sport")
     # session["draftGroupId"] = json.get("draftGroupId")
 
-    optimizer = get_optimizer(
-        is_captain_mode(gameType), SPORT_ID_TO_PYDFS_SPORT[session.get("sport")]["sport"])
+    optimizer = get_optimizer(is_captain_mode(
+        gameType), SPORT_ID_TO_PYDFS_SPORT[session.get("sport")]["sport"])
     optimizer.load_players([transform_player(player, gameType)
-                            for player in players])
+                            for player in players["all"]])
 
-    if "NUMBER_OF_PLAYERS_FROM_SAME_TEAM" in rules:
-        for team in rules["NUMBER_OF_PLAYERS_FROM_SAME_TEAM"]:
+    if "NUMBER_OF_PLAYERS_TO_STACK_FROM_SAME_TEAM" in rules:
+        for team in rules["NUMBER_OF_PLAYERS_TO_STACK_FROM_SAME_TEAM"]:
             optimizer.set_players_from_one_team({
                 team["key"]: team["value"]
             })
@@ -139,68 +137,69 @@ def optimize():
         optimizer.set_projected_ownership(
             min_projected_ownership=rules["MIN_PROJECTED_OWNERSHIP"] if "MIN_PROJECTED_OWNERSHIP" in rules else None, max_projected_ownership=rules["MAX_PROJECTED_OWNERSHIP"] if "MAX_PROJECTED_OWNERSHIP" in rules else None)
 
-    if "TEAM" in stacking:
-        team = stacking["TEAM"]
+    if stacking:
+        if "TEAM" in stacking:
+            team = stacking["TEAM"]
 
-        if "NUMBER_OF_PLAYERS_TO_STACK" in team:
-            optimizer.add_stack(
-                TeamStack(team["NUMBER_OF_PLAYERS_TO_STACK"],
-                          for_teams=team["FROM_TEAMS"] if "FROM_TEAMS" in team else None,
-                          for_positions=team["FROM_POSITIONS"] if "FROM_POSITIONS" in team else None,
-                          spacing=team["SPACING"] if "SPACING" in team else None,
-                          max_exposure=team["MAX_EXPOSURE"] if "MAX_EXPOSURE" in team else None,
-                          max_exposure_per_team={
-                    team["MAX_EXPOSURE_PER_TEAM"]["team"]: team["MAX_EXPOSURE_PER_TEAM"]["exposure"]} if "MAX_EXPOSURE_PER_TEAM" in team else None
+            if "NUMBER_OF_PLAYERS_TO_STACK" in team:
+                optimizer.add_stack(
+                    TeamStack(team["NUMBER_OF_PLAYERS_TO_STACK"],
+                              for_teams=team["FROM_TEAMS"] if "FROM_TEAMS" in team else None,
+                              for_positions=team["FROM_POSITIONS"] if "FROM_POSITIONS" in team else None,
+                              spacing=team["SPACING"] if "SPACING" in team else None,
+                              max_exposure=team["MAX_EXPOSURE"] if "MAX_EXPOSURE" in team else None,
+                              max_exposure_per_team={
+                        team["MAX_EXPOSURE_PER_TEAM"]["team"]: team["MAX_EXPOSURE_PER_TEAM"]["exposure"]} if "MAX_EXPOSURE_PER_TEAM" in team else None
+                    )
                 )
-            )
 
-    if "POSITION" in stacking:
-        position = stacking["POSITION"]
+        if "POSITION" in stacking:
+            position = stacking["POSITION"]
 
-        if "NUMBER_OF_POSITIONS" in position:
-            optimizer.add_stack(PositionsStack(
-                position["NUMBER_OF_POSITIONS"],
-                for_teams=position["FOR_TEAMS"] if "FOR_TEAMS" in position else None,
-                max_exposure=position["MAX_EXPOSURE"] if "MAX_EXPOSURE" in position else None),
-                max_exposure_per_team={position["MAX_EXPOSURE_PER_TEAM"]["team"]: position["MAX_EXPOSURE_PER_TEAM"]["exposure"]} if "MAX_EXPOSURE_PER_TEAM" in position else None),
+            if "NUMBER_OF_POSITIONS" in position:
+                optimizer.add_stack(PositionsStack(
+                    position["NUMBER_OF_POSITIONS"],
+                    for_teams=position["FOR_TEAMS"] if "FOR_TEAMS" in position else None,
+                    max_exposure=position["MAX_EXPOSURE"] if "MAX_EXPOSURE" in position else None),
+                    max_exposure_per_team={position["MAX_EXPOSURE_PER_TEAM"]["team"]: position["MAX_EXPOSURE_PER_TEAM"]["exposure"]} if "MAX_EXPOSURE_PER_TEAM" in position else None),
 
-    if "CUSTOM" in stacking:
-        custom = stacking["CUSTOM"]
+        if "CUSTOM" in stacking:
+            custom = stacking["CUSTOM"]
 
-        if "STACKS" in custom:
-            stacks = [player["players"] for player in custom["STACKS"]]
+            if "STACKS" in custom:
+                stacks = [player["players"] for player in custom["STACKS"]]
 
-            groups = []
+                groups = []
 
-            for stack in stacks:
-                players = []
+                for stack in stacks:
+                    players = []
 
-                for player in stack:
-                    players.append(optimizer.get_player_by_name(
-                        f'{player["first_name"]} {player["last_name"]}'))
+                    for player in stack:
+                        players.append(optimizer.get_player_by_name(
+                            f'{player["first_name"]} {player["last_name"]}'))
 
-            if (len(groups) > 1):
-                optimizer.add_stack(Stack([groups]))
+                if (len(groups) > 1):
+                    optimizer.add_stack(Stack([groups]))
 
-            # Only get first stack for now
-            # stacks = custom["STACKS"][0]
+                # Only get first stack for now
+                # stacks = custom["STACKS"][0]
 
-            # if "players" in stacks:
-            #     players = stacks["players"]
+                # if "players" in stacks:
+                #     players = stacks["players"]
 
-            #     group = PlayersGroup([
-            #         optimizer.get_player_by_name(f'{player["first_name"]} {player["last_name"]}') for player in players])
+                #     group = PlayersGroup([
+                #         optimizer.get_player_by_name(f'{player["first_name"]} {player["last_name"]}') for player in players])
 
-            #     print(group)
+                #     print(group)
 
-            #     optimizer.add_stack(Stack([group]))
+                #     optimizer.add_stack(Stack([group]))
 
-    if lockedPlayers is not None:
-        for player in lockedPlayers:
+    if "locked" in players and players['locked'] is not None:
+        for player in players['locked']:
             optimizer.add_player_to_lineup(optimizer.get_player_by_id(player))
 
-    if excludedPlayers is not None:
-        for player in excludedPlayers:
+    if "excluded" in players and players["excluded"] is not None:
+        for player in players['excluded']:
             optimizer.remove_player(optimizer.get_player_by_id(player))
 
     try:
