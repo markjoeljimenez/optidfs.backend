@@ -10,7 +10,7 @@ colorama==0.4.3
 docutils==0.16
 git+https://github.com/markjoeljimenez/draftkings_client.git
 Flask==1.1.1
-Flask-Cors==3.0.8
+Flask-Cors==3.0.9
 Flask-RESTful==0.3.7
 Flask-Session==0.3.2
 gunicorn==19.9.0
