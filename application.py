@@ -71,7 +71,7 @@ def get_players():
                     "position": player["Position"],
                     "team": player["TeamAbbrev"],
                     "salary": player["Salary"],
-                    "points_per_contest": player["AvgPointsPerGame"],
+                    "points_per_contest": round(player["AvgPointsPerGame"] * (1.5 if player["Roster Position"] == 'CPT' else 1), 2),
                     "draft_positions": player["Roster Position"]
                 } for index, player in players.iterrows()]
             })
@@ -114,6 +114,14 @@ def optimize():
     optimizer.load_players([transform_player(player, gameType)
                             for player in players["all"]])
 
+    if "locked" in players and players['locked'] is not None:
+        for player in players['locked']:
+            optimizer.add_player_to_lineup(optimizer.get_player_by_id(player))
+
+    if "excluded" in players and players["excluded"] is not None:
+        for player in players['excluded']:
+            optimizer.remove_player(optimizer.get_player_by_id(player))
+
     if "NUMBER_OF_PLAYERS_TO_STACK_FROM_SAME_TEAM" in rules:
         for team in rules["NUMBER_OF_PLAYERS_TO_STACK_FROM_SAME_TEAM"]:
             optimizer.set_players_from_one_team({
@@ -137,18 +145,18 @@ def optimize():
         optimizer.set_projected_ownership(
             min_projected_ownership=rules["MIN_PROJECTED_OWNERSHIP"] if "MIN_PROJECTED_OWNERSHIP" in rules else None, max_projected_ownership=rules["MAX_PROJECTED_OWNERSHIP"] if "MAX_PROJECTED_OWNERSHIP" in rules else None)
 
-    if stacking:
+    if stacking: 
         if "TEAM" in stacking:
             team = stacking["TEAM"]
 
             if "NUMBER_OF_PLAYERS_TO_STACK" in team:
                 optimizer.add_stack(
                     TeamStack(team["NUMBER_OF_PLAYERS_TO_STACK"],
-                              for_teams=team["FROM_TEAMS"] if "FROM_TEAMS" in team else None,
-                              for_positions=team["FROM_POSITIONS"] if "FROM_POSITIONS" in team else None,
-                              spacing=team["SPACING"] if "SPACING" in team else None,
-                              max_exposure=team["MAX_EXPOSURE"] if "MAX_EXPOSURE" in team else None,
-                              max_exposure_per_team={
+                            for_teams=team["FROM_TEAMS"] if "FROM_TEAMS" in team else None,
+                            for_positions=team["FROM_POSITIONS"] if "FROM_POSITIONS" in team else None,
+                            spacing=team["SPACING"] if "SPACING" in team else None,
+                            max_exposure=team["MAX_EXPOSURE"] if "MAX_EXPOSURE" in team else None,
+                            max_exposure_per_team={
                         team["MAX_EXPOSURE_PER_TEAM"]["team"]: team["MAX_EXPOSURE_PER_TEAM"]["exposure"]} if "MAX_EXPOSURE_PER_TEAM" in team else None
                     )
                 )
@@ -193,14 +201,6 @@ def optimize():
                 #     print(group)
 
                 #     optimizer.add_stack(Stack([group]))
-
-    if "locked" in players and players['locked'] is not None:
-        for player in players['locked']:
-            optimizer.add_player_to_lineup(optimizer.get_player_by_id(player))
-
-    if "excluded" in players and players["excluded"] is not None:
-        for player in players['excluded']:
-            optimizer.remove_player(optimizer.get_player_by_id(player))
 
     try:
         optimize = optimizer.optimize(rules["NUMBER_OF_GENERATIONS"])
