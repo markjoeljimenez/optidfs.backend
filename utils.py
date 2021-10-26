@@ -66,7 +66,7 @@ def transform_player(player, gameType):
         player["id"],
         player["firstName"],
         player["lastName"],
-        player["draft_positions"].split("/") if gameType and 'Showdown' in gameType else player["position"].split("/"),
+        player["draftPositions"].split("/") if gameType and 'Showdown' in gameType else player["position"].split("/"),
         player["team"],
         float(player["salary"]),
         float(player["fppg"]),
