@@ -64,16 +64,16 @@ SPORT_ID_TO_PYDFS_SPORT = {
 def transform_player(player, gameType):
     return Player(
         player["id"],
-        player["first_name"],
-        player["last_name"],
-        player["draft_positions"].split("/") if 'Showdown' in gameType else player["position"].split("/"),
+        player["firstName"],
+        player["lastName"],
+        player["draft_positions"].split("/") if gameType and 'Showdown' in gameType else player["position"].split("/"),
         player["team"],
         float(player["salary"]),
-        float(player["points_per_contest"]),
+        float(player["fppg"]),
         player.get("status") == "O",
         None,
-        player.get("min_exposure"),
-        player.get("projected_ownership")
+        player.get("minExposure"),
+        player.get("projectedOwnership")
     )
 
 
