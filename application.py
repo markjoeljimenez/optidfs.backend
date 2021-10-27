@@ -1,16 +1,15 @@
 from os import environ
 import csv
 import json
-import requests
 import jsonpickle
 import pandas as pd
 from flask import Flask, request, session, Response
 from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
 from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, JSONLineupExporter, TeamStack, PositionsStack, PlayersGroup, Stack
-from draft_kings.data import SPORT_ID_TO_SPORT
-from draft_kings.client import contests, sports
-from utils import SPORT_ID_TO_PYDFS_SPORT, transform_player, generate_csv_from_csv, get_available_players, is_captain_mode
+from draft_kings.client import contests
+from utils import transform_player, generate_csv_from_csv, get_available_players
+from providers import providers
 
 application = Flask(__name__)
 application.debug = True
@@ -21,17 +20,12 @@ application.config["SESSION_COOKIE_SAMESITE"] = None
 CORS(application, supports_credentials=True)
 
 
-@application.route("/")
+@application.route("/", methods=["GET", "POST"])
 def get_sports():
-    try:
-        response = list(map(
-            (lambda sport: {
-                **sport,
-                "supported": sport["sportId"] in SPORT_ID_TO_PYDFS_SPORT,
-                "positions": SPORT_ID_TO_PYDFS_SPORT[sport["sportId"]]["positions"] if sport["sportId"] in SPORT_ID_TO_PYDFS_SPORT else None
-            }), sports()["sports"]))
+    provider = request.args.get("provider")
 
-        return json.dumps(response)
+    try:
+        return json.dumps(providers[provider]["sports"])
     except:
         return Response(
             "Unable to reach servers",
@@ -45,11 +39,11 @@ def get_contests():
 
     try:
         if json:
+            provider = json.get("provider")
+            sportId = json.get("sportId")
             sport = json.get("sport")
 
-            if sport:
-                return jsonpickle.encode(contests(sport=SPORT_ID_TO_SPORT[sport]))
-
+            return jsonpickle.encode(providers[provider]["contests"](sportId, sport))
     except:
         return Response(
             "Unable to get contests",
@@ -60,21 +54,13 @@ def get_contests():
 @ application.route("/players", methods=["GET", "POST"])
 def get_players():
     try:
-        if request.args.get("id"):
-            players = get_available_players(request.args.get("id"))
+        contestId = request.args.get("id")
+        provider =  request.args.get("provider")
+        
+        if contestId:
+            players = providers[provider]["players"](contestId)
 
-            return json.dumps({
-                "players": [{
-                    "id": player["ID"],
-                    "first_name": player["Name"].split()[0],
-                    "last_name": player["Name"].split()[1] if len(player["Name"].split()) > 1 else "",
-                    "position": player["Position"],
-                    "team": player["TeamAbbrev"],
-                    "salary": player["Salary"],
-                    "points_per_contest": round(player["AvgPointsPerGame"] * (1.5 if player["Roster Position"] == 'CPT' else 1), 2),
-                    "draft_positions": player["Roster Position"]
-                } for index, player in players.iterrows()]
-            })
+            return json.dumps(players)
 
         if request.files:
             df = pd.read_csv(request.files.get("csv"))
@@ -106,11 +92,12 @@ def optimize():
     rules = json.get("rules")
     gameType = json.get("gameType")
     stacking = json.get("stacking")
+    provider =  json.get("provider")
     session["sport"] = json.get("sport")
+
     # session["draftGroupId"] = json.get("draftGroupId")
 
-    optimizer = get_optimizer(is_captain_mode(
-        gameType), SPORT_ID_TO_PYDFS_SPORT[session.get("sport")]["sport"])
+    optimizer = providers[provider]["optimize"](session["sport"], gameType)
     optimizer.load_players([transform_player(player, gameType)
                             for player in players["all"]])
 
