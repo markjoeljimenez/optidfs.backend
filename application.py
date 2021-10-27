@@ -8,7 +8,7 @@ from flask_restful import Api, Resource, reqparse
 from flask_cors import CORS
 from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, JSONLineupExporter, TeamStack, PositionsStack, PlayersGroup, Stack
 from draft_kings.client import contests
-from utils import transform_player, generate_csv_from_csv, get_available_players
+from utils import transform_player, generate_csv_from_csv, get_available_players, SPORT_ID_TO_PYDFS_SPORT
 from providers import providers
 
 application = Flask(__name__)
@@ -212,8 +212,10 @@ def exportCSV():
             lineups = session.get("lineups")
             sport = session.get("sport")
 
+            print(lineups, sport)
+
             csv = generate_csv_from_csv(
-                lineups, SPORT_ID_TO_PYDFS_SPORT[sport])
+                lineups, SPORT_ID_TO_PYDFS_SPORT[sport["sportId"]])
 
             return Response(csv,
                             mimetype="text/csv",

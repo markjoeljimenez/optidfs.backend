@@ -116,8 +116,10 @@ def get_positions(sport):
 def generate_csv_from_csv(lineups, sport):
     csvfile = io.StringIO()
     lineup_writer = csv.writer(csvfile, delimiter=',')
+    print(sport)
 
     for index, lineup in enumerate(lineups):
+        print(lineup)
         if index == 0:
             header = [pos for pos in sport["positions"]]
             lineup_writer.writerow(header)
