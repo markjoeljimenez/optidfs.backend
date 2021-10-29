@@ -56,9 +56,10 @@ def get_players():
     try:
         contestId = request.args.get("id")
         provider =  request.args.get("provider")
-        
+        gameType = request.args.get("gameType")
+
         if contestId:
-            players = providers[provider]["players"](contestId)
+            players = providers[provider]["players"](contestId, gameType)
 
             return json.dumps(players)
 
