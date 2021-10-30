@@ -59,14 +59,14 @@ providers = {
 
 def get_draftkings_players(id):
     csv_players = get_available_players(id)
-    return list([test_test(player, id) for index, player in csv_players.iterrows()])
+    return list([merge_draftking_players(player, id) for index, player in csv_players.iterrows()])
 
 
 def merge_draftking_players(player, id):
     draftable_players = draftables(id)["draftables"]
     found_player = next(filter(lambda x: x["id"] == player["ID"], draftable_players), None)
     return {
-        "id": found_player["id"],
+        "id": player["ID"],
         "first_name": found_player["names"]["first"],
         "last_name": found_player["names"]["last"],
         "position": found_player["position"],
