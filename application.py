@@ -25,7 +25,10 @@ def get_sports():
     provider = request.args.get("provider")
 
     try:
-        return json.dumps(providers[provider]["sports"])
+        with open('mocks/draftkings/sports.json', 'r') as f:
+            data = json.load(f)
+            return json.dumps(data)
+        # return json.dumps(providers[provider]["sports"])
     except:
         return Response(
             "Unable to reach servers",
@@ -35,15 +38,19 @@ def get_sports():
 
 @ application.route("/contests", methods=["GET", "POST"])
 def get_contests():
-    json = request.get_json()
+    body = request.get_json()
 
     try:
-        if json:
-            provider = json.get("provider")
-            sportId = json.get("sportId")
-            sport = json.get("sport")
+        if body:
+            provider = body.get("provider")
+            sportId = body.get("sportId")
+            sport = body.get("sport")
 
-            return jsonpickle.encode(providers[provider]["contests"](sportId, sport))
+            with open('mocks/draftkings/contests-mlb.json', 'r') as f:
+                data = json.load(f)
+                return jsonpickle.encode(data)
+
+            # return jsonpickle.encode(providers[provider]["contests"](sportId, sport))
     except:
         return Response(
             "Unable to get contests",
@@ -61,7 +68,10 @@ def get_players():
         if contestId:
             players = providers[provider]["players"](contestId, gameType)
 
-            return json.dumps(players)
+            with open('mocks/draftkings/players-mlb.json', 'r') as f:
+                data = json.load(f)
+                return jsonpickle.encode(data)
+            # return json.dumps(players)
 
         if request.files:
             df = pd.read_csv(request.files.get("csv"))
