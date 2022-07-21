@@ -5,6 +5,9 @@ import pandas as pd
 from pydfs_lineup_optimizer import Player, Sport, Site
 # from draft_kings.client import draftables, draft_group_details
 
+def remove_duplicates(list):
+    return [dict(t) for t in {tuple(sorted(d.items())) for d in list}]
+
 DRAFTKINGS_SPORT_ID_TO_PYDFS_SPORT = {
     1: {
         "sport": Sport.FOOTBALL,
