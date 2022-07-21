@@ -1,9 +1,11 @@
+import pandas as pd
 import requests
 from draft_kings import Client, data
 from pydfs_lineup_optimizer import Sport
 
-from utils import remove_duplicates
+from utils import transform_to_json
 
+BASE_URL = 'https://www.draftkings.com'
 API_BASE_URL = 'https://api.draftkings.com'
 
 class Draftkings:
@@ -16,11 +18,7 @@ class Draftkings:
         return list(self.__transform_sports())
 
     def get_contests(self, sport: str):
-        return remove_duplicates(list(
-                    map(
-                        (lambda contests: contests.__dict__), self.client.contests(sport=data.CONTEST_SPORT_ABBREVIATIONS_TO_SPORTS[sport.upper()]).contests)
-                    )
-                )
+        return transform_to_json(self.client.contests(sport=data.CONTEST_SPORT_ABBREVIATIONS_TO_SPORTS[sport.upper()]).contests)
 
     def get_players(self, id):
         return self.__get_players(id)
@@ -35,28 +33,35 @@ class Draftkings:
             }), requests.get(f"{API_BASE_URL}/sites/US-DK/sports/v1/sports?format=json").json()["sports"])
 
     def __get_players(self, id):
-        csv_players = self.client.get_available_players(id)
-        draftable_players = self.client.draftables(id)["draftables"]
+        csv_players = self.get_available_players(id)
+        draftable_players = transform_to_json(self.client.draftables(id).players)
+       
+        return [self.__merge_draftking_players(draftable_players, player) for index, player in csv_players.iterrows()]
 
-        print(csv_players, draftable_players)
-        
-        return list([self.__merge_draftking_players(draftable_players, player, id) for index, player in csv_players.iterrows()])
-
-    def __merge_draftking_players(draftable_players, player, id):
-        found_player = next(filter(lambda x: x["id"] == player["ID"], draftable_players), None)
+    def __merge_draftking_players(self, draftable_players, player):
+        found_player = next(filter(lambda x: x["draftable_id"] == player["ID"], draftable_players), None)
 
         return {
             "id": player["ID"],
-            "first_name": found_player["names"]["first"],
-            "last_name": found_player["names"]["last"],
-            "position": found_player["position"],
-            "team": found_player["team_abbreviation"],
-            "salary": found_player["salary"],
+            "first_name": found_player["name_details"]["first"],
+            "last_name": found_player["name_details"]["last"],
+            "position": found_player["position_name"],
+            "team": found_player["team_details"]["abbreviation"],
+            "salary": player["Salary"],
             "points_per_contest": player["AvgPointsPerGame"],
             "draft_positions": player["Roster Position"],
-            "status": found_player["status"],
-            "images": found_player["images"]
+            # "status": found_player["status"], TODO: Add this
+            "images": found_player["image_details"]
         }
+
+    def get_available_players(self, draft_group_id):
+        contest_id = self.client.draft_group_details(draft_group_id).contest_details.type_id
+        url = f'{BASE_URL}/lineup/getavailableplayerscsv?contestTypeId={contest_id}&draftGroupId={draft_group_id}'
+
+        df = pd.read_csv(url)
+        df.head()
+
+        return df
 
 
 DRAFTKINGS_SPORT_ID_TO_PYDFS_SPORT = {

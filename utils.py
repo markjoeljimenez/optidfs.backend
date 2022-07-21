@@ -1,12 +1,18 @@
 import csv
 # import pydash
 import io
-import pandas as pd
+import json
+import jsonpickle
 from pydfs_lineup_optimizer import Player, Sport, Site
 # from draft_kings.client import draftables, draft_group_details
 
 def remove_duplicates(list):
     return [dict(t) for t in {tuple(sorted(d.items())) for d in list}]
+
+def transform_to_json(a):
+    return list(map(
+                (lambda o: json.loads(jsonpickle.encode(o, unpicklable=False))), a)
+            )
 
 DRAFTKINGS_SPORT_ID_TO_PYDFS_SPORT = {
     1: {
@@ -133,16 +139,6 @@ def generate_csv_from_csv(lineups, sport):
         lineup_writer.writerow(row)
 
     return csvfile.getvalue()
-
-
-# def get_available_players(draft_group_id):
-#     contest_id = draft_group_details(draft_group_id)["contest"]["type_id"]
-#     url = f'https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId={contest_id}&draftGroupId={draft_group_id}'
-
-#     df = pd.read_csv(url)
-#     df.head()
-
-#     return df
 
 
 def is_captain_mode(gameType):
