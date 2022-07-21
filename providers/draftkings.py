@@ -7,15 +7,23 @@ from utils import remove_duplicates
 API_BASE_URL = 'https://api.draftkings.com'
 
 class Draftkings:
+    client: Client
+
+    def __init__(self):
+        self.client = Client()
+
     def get_sports(self):
         return list(self.__transform_sports())
 
     def get_contests(self, sport: str):
         return remove_duplicates(list(
                     map(
-                        (lambda contests: contests.__dict__), Client().contests(sport=data.CONTEST_SPORT_ABBREVIATIONS_TO_SPORTS[sport.upper()]).contests)
+                        (lambda contests: contests.__dict__), self.client.contests(sport=data.CONTEST_SPORT_ABBREVIATIONS_TO_SPORTS[sport.upper()]).contests)
                     )
                 )
+
+    def get_players(self, id):
+        return self.__get_players(id)
 
     # Utils
     def __transform_sports(self):
@@ -25,6 +33,30 @@ class Draftkings:
                 "supported": sport["sportId"] in DRAFTKINGS_SPORT_ID_TO_PYDFS_SPORT,
                 # "positions": SPORT_ID_TO_PYDFS_SPORT[sport["sportId"]]["positions"] if sport["sportId"] in SPORT_ID_TO_PYDFS_SPORT else None
             }), requests.get(f"{API_BASE_URL}/sites/US-DK/sports/v1/sports?format=json").json()["sports"])
+
+    def __get_players(self, id):
+        csv_players = self.client.get_available_players(id)
+        draftable_players = self.client.draftables(id)["draftables"]
+
+        print(csv_players, draftable_players)
+        
+        return list([self.__merge_draftking_players(draftable_players, player, id) for index, player in csv_players.iterrows()])
+
+    def __merge_draftking_players(draftable_players, player, id):
+        found_player = next(filter(lambda x: x["id"] == player["ID"], draftable_players), None)
+
+        return {
+            "id": player["ID"],
+            "first_name": found_player["names"]["first"],
+            "last_name": found_player["names"]["last"],
+            "position": found_player["position"],
+            "team": found_player["team_abbreviation"],
+            "salary": found_player["salary"],
+            "points_per_contest": player["AvgPointsPerGame"],
+            "draft_positions": player["Roster Position"],
+            "status": found_player["status"],
+            "images": found_player["images"]
+        }
 
 
 DRAFTKINGS_SPORT_ID_TO_PYDFS_SPORT = {

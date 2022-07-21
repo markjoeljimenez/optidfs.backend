@@ -7,9 +7,10 @@
 # from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, JSONLineupExporter, TeamStack, PositionsStack, PlayersGroup, Stack
 # from draft_kings.client import contests
 # from utils import transform_player, generate_csv_from_csv, get_available_players, SPORT_ID_TO_PYDFS_SPORT
-from providers.providers import providers, testProviders
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from providers.draftkings import Draftkings
+from providers.yahoo import Yahoo
 
 app = FastAPI()
 
@@ -25,10 +26,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+providers = {
+    'yahoo': Yahoo(),
+    'draftkings': Draftkings()
+}
+
 @app.get("/")
 async def get_sports(provider: str):
     try:
-        return testProviders.get(provider).get_sports()
+        return providers.get(provider).get_sports()
     except:
         raise HTTPException(status_code=500, detail="Unable to reach servers")
 
@@ -41,9 +47,17 @@ async def get_contests(request: Request):
         provider = body["provider"]
         sport = body["sportId"] if provider == 'yahoo' else body["sport"]
 
-        return testProviders.get(provider).get_contests(sport)
+        return providers.get(provider).get_contests(sport)
     except:
         raise HTTPException(status_code=500, detail="Unable to get contests")
+
+@app.get("/players")
+async def get_players(gameType, id, provider):
+    try:
+        return providers.get(provider).get_players(id)
+    except:
+        raise HTTPException(status_code=500, detail="Unable to get players")
+
 
 
 # @ application.route("/players", methods=["GET", "POST"])

@@ -14,6 +14,9 @@ class Yahoo:
     def get_contests(self, sport: str):
         return requests.get(CONTESTS(sport.lower())).json()["contests"]["result"]
 
+    def get_players(self, id):
+        return requests.get(PLAYERS(id)).json()["players"]["result"]
+
     # Utils
     def __map_contests_to_sports(self, contests):
         return map(

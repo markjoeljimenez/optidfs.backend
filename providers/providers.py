@@ -9,7 +9,7 @@ from draft_kings import Sport, Client, data
 from pydfs_lineup_optimizer import get_optimizer, Site
 import requests
 
-testProviders = {
+providers = {
     'yahoo': Yahoo(),
     'draftkings': Draftkings()
 }
@@ -30,8 +30,8 @@ providers = {
         # "optimize": lambda sport, gameType: get_optimizer(is_captain_mode(gameType), SPORT_ID_TO_PYDFS_SPORT[sport["sportId"]]["sport"])
     },
     "yahoo": {
-        "sports": testProviders.get('yahoo').get_sports(),
-        "contests": lambda sport: testProviders.get('yahoo').get_contests(sport),
+        "sports": providers.get('yahoo').get_sports(),
+        "contests": lambda sport: providers.get('yahoo').get_contests(sport),
         # "players": lambda id, gameType: ({
         #     "provider": "yahoo",
         #     "players": requests.get(yahoo_players(id)).json()["players"]["result"]
