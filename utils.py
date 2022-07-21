@@ -54,6 +54,11 @@ DRAFTKINGS_SPORT_ID_TO_PYDFS_SPORT = {
     }
 }
 
+YAHOO_SPORT_ID_TO_PYDFS_SPORT = {
+    "golf": { "sport": Sport.GOLF },
+    "mlb": { "sport": Sport.BASEBALL }
+}
+
 
 # def merge_two_dicts(x, y):
 #     z = x.copy()   # start with x"s keys and values

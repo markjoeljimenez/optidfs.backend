@@ -1,8 +1,5 @@
 # from os import environ
 # import csv
-import json
-import requests
-# import jsonpickle
 # import pandas as pd
 # from flask import Flask, request, session, Response
 # from flask_restful import Api, Resource, reqparse
@@ -11,9 +8,8 @@ import requests
 # from draft_kings.client import contests
 # from utils import transform_player, generate_csv_from_csv, get_available_players, SPORT_ID_TO_PYDFS_SPORT
 from providers import providers
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from draft_kings.data import Sport, SPORT_ID_TO_SPORT
 
 app = FastAPI()
 
@@ -32,27 +28,22 @@ app.add_middleware(
 @app.get("/")
 async def get_sports(provider: str):
     try:
-        return providers()[provider]["sports"]
+        return providers[provider]["sports"]
     except:
         raise HTTPException(status_code=500, detail="Unable to reach servers")
 
 
-# @ application.route("/contests", methods=["GET", "POST"])
-# def get_contests():
-#     json = request.get_json()
+@app.post("/contests")
+async def get_contests(request: Request):
+    body = await request.json()
 
-#     try:
-#         if json:
-#             provider = json.get("provider")
-#             sportId = json.get("sportId")
-#             sport = json.get("sport")
+    try:
+        provider = body["provider"]
+        sport = body["sportId"] if provider == 'yahoo' else body["sport"]
 
-#             return jsonpickle.encode(providers[provider]["contests"](sportId, sport))
-#     except:
-#         return Response(
-#             "Unable to get contests",
-#             status=500,
-#         )
+        return providers[provider]["contests"](sport)
+    except:
+        raise HTTPException(status_code=500, detail="Unable to get contests")
 
 
 # @ application.route("/players", methods=["GET", "POST"])
