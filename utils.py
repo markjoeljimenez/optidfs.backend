@@ -1,11 +1,11 @@
 import csv
-import pydash
+# import pydash
 import io
 import pandas as pd
 from pydfs_lineup_optimizer import Player, Sport, Site
-from draft_kings.client import draftables, draft_group_details
+# from draft_kings.client import draftables, draft_group_details
 
-SPORT_ID_TO_PYDFS_SPORT = {
+DRAFTKINGS_SPORT_ID_TO_PYDFS_SPORT = {
     1: {
         "sport": Sport.FOOTBALL,
         "positions": ["QB", "RB", "RB", "WR", "WR", "WR", "TE", "FLEX", "DST"]
@@ -77,21 +77,21 @@ def transform_player(player, gameType):
     )
 
 
-def get_positions(sport):
-    if sport == 'NFL':
-        return Positions.NFL
+# def get_positions(sport):
+#     if sport == 'NFL':
+#         return Positions.NFL
 
-    if sport == 'NBA':
-        return Positions.NBA
+#     if sport == 'NBA':
+#         return Positions.NBA
 
-    if sport == 'NHL':
-        return Positions.NHL
+#     if sport == 'NHL':
+#         return Positions.NHL
 
-    if sport == 'MLB':
-        return Positions.MLB
+#     if sport == 'MLB':
+#         return Positions.MLB
 
-    if sport == 'SOCCER':
-        return Positions.SOCCER
+#     if sport == 'SOCCER':
+#         return Positions.SOCCER
 
 
 # def generate_csv(lineups, draft_group_id, sport):
@@ -127,14 +127,14 @@ def generate_csv_from_csv(lineups, sport):
     return csvfile.getvalue()
 
 
-def get_available_players(draft_group_id):
-    contest_id = draft_group_details(draft_group_id)["contest"]["type_id"]
-    url = f'https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId={contest_id}&draftGroupId={draft_group_id}'
+# def get_available_players(draft_group_id):
+#     contest_id = draft_group_details(draft_group_id)["contest"]["type_id"]
+#     url = f'https://www.draftkings.com/lineup/getavailableplayerscsv?contestTypeId={contest_id}&draftGroupId={draft_group_id}'
 
-    df = pd.read_csv(url)
-    df.head()
+#     df = pd.read_csv(url)
+#     df.head()
 
-    return df
+#     return df
 
 
 def is_captain_mode(gameType):
