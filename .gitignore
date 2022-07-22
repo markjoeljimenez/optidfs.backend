@@ -2,7 +2,6 @@ __pycache__
 flask_session
 env
 .env
-.vscode
 *.pyc
 *.db
 # Elastic Beanstalk Files
