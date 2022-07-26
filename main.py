@@ -39,20 +39,15 @@ async def get_sports(provider: str):
         raise HTTPException(status_code=500, detail="Unable to reach servers")
 
 
-@app.post("/contests")
-async def get_contests(request: Request):
-    body = await request.json()
-
+@app.get("/contests")
+async def contests(provider, sport, sportId):
     try:
-        provider = body["provider"]
-        sport = body["sportId"] if provider == 'yahoo' else body["sport"]
-
-        return providers.get(provider).get_contests(sport)
+        return providers.get(provider).get_contests(sportId if provider == 'yahoo' else sport)
     except:
         raise HTTPException(status_code=500, detail="Unable to get contests")
 
 @app.get("/players")
-async def get_players(gameType, id, provider):
+async def get_players(id, provider):
     try:
         return providers.get(provider).get_players(id)
     except:
