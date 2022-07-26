@@ -3,7 +3,7 @@ import csv
 import io
 import json
 import jsonpickle
-from pydfs_lineup_optimizer import Player, Sport, Site
+from pydfs_lineup_optimizer import Lineup, Player, Sport, Site
 # from draft_kings.client import draftables, draft_group_details
 
 def remove_duplicates(list):
@@ -84,10 +84,10 @@ def transform_player(player, gameType):
         player["team"],
         float(player["salary"]),
         float(player["fppg"]),
-        player.get("status") == "O",
-        None,
-        player.get("minExposure"),
-        player.get("projectedOwnership")
+        # player.get("status") == "O",
+        # None,
+        # player.get("minExposure"),
+        # player.get("projectedOwnership")
     )
 
 
@@ -143,3 +143,17 @@ def generate_csv_from_csv(lineups, sport):
 
 def is_captain_mode(gameType):
     return Site.DRAFTKINGS_CAPTAIN_MODE if 'Showdown' in gameType else Site.DRAFTKINGS
+
+def transform_lineups(lineups: 'list[Lineup]', players):
+    _lineups = []
+
+    for lineup in lineups:
+        players = [next((player for player in players if player['id'] == l._player.id), None) for l in lineup]
+
+        _lineups.append({
+            'players': players,
+            'fppg': lineup.fantasy_points_projection,
+            'salary': lineup.salary_costs
+        })
+
+    return _lineups

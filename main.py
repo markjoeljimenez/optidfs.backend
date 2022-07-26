@@ -53,7 +53,15 @@ async def get_players(id, provider):
     except:
         raise HTTPException(status_code=500, detail="Unable to get players")
 
+@app.post("/optimize")
+async def optimize(request: Request):
+    body = await request.json()
 
+    players = body['players']
+    provider = body['provider']
+    sport = body['sport']
+
+    return providers.get(provider).get_optimized_lineups(sport, players)
 
 # @ application.route("/players", methods=["GET", "POST"])
 # def get_players():
