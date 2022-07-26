@@ -146,12 +146,12 @@ def is_captain_mode(gameType):
 
 def transform_lineups(lineups: 'list[Lineup]', players):
     _lineups = []
-
+    
     for lineup in lineups:
-        players = [next((player for player in players if player['id'] == l._player.id), None) for l in lineup]
+        p = [next((player for player in players if player['id'] == l._player.id), None) for l in lineup]
 
         _lineups.append({
-            'players': players,
+            'players': p,
             'fppg': lineup.fantasy_points_projection,
             'salary': lineup.salary_costs
         })
