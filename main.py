@@ -60,8 +60,9 @@ async def optimize(request: Request):
     players = body['players']
     provider = body['provider']
     sport = body['sport']
+    settings = body['settings']
 
-    return providers.get(provider).get_optimized_lineups(sport, players)
+    return providers.get(provider).get_optimized_lineups(sport, players, settings)
 
 # @ application.route("/players", methods=["GET", "POST"])
 # def get_players():
