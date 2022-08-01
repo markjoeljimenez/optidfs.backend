@@ -1,9 +1,8 @@
 import pandas as pd
 import requests
 from draft_kings import Client, data
-from pydfs_lineup_optimizer import Sport
-
-from utils import transform_to_json
+from pydfs_lineup_optimizer import Site, Sport, get_optimizer
+from utils import transform_lineups, transform_player, transform_to_json
 
 BASE_URL = 'https://www.draftkings.com'
 API_BASE_URL = 'https://api.draftkings.com'
@@ -21,7 +20,24 @@ class Draftkings:
         return transform_to_json(self.client.contests(sport=data.CONTEST_SPORT_ABBREVIATIONS_TO_SPORTS[sport.upper()]).contests)
 
     def get_players(self, id):
-        return self.__get_players(id)
+        players = self.__get_players(id)
+        # statuses = {player["status"] for player in players}
+
+        return { 
+            "players": players, 
+            "statusFilters": [] # TODO: Get statuses
+        }
+
+    def get_optimized_lineups(self, sport, players, settings):
+        transformedPlayers = players
+
+        if (len(settings["statusFilters"])):
+            transformedPlayers = filter(lambda player: player["status"] in settings["statusFilters"] , players)
+
+        optimizer = get_optimizer(Site.DRAFTKINGS, DRAFTKINGS_SPORT_ID_TO_PYDFS_SPORT[sport['sportId']]['sport'])
+        optimizer.player_pool.load_players([transform_player(player, None) for player in transformedPlayers])
+
+        return transform_lineups(list(optimizer.optimize(n=settings["numberOfLineups"])), players)
 
     # Utils
     def __transform_sports(self):

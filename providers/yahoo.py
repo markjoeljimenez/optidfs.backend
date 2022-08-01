@@ -1,6 +1,6 @@
-from pydfs_lineup_optimizer import Site, get_optimizer
+from pydfs_lineup_optimizer import Site, Sport, get_optimizer
 import requests
-from utils import YAHOO_SPORT_ID_TO_PYDFS_SPORT, remove_duplicates, transform_lineups, transform_player
+from utils import remove_duplicates, transform_lineups, transform_player
 
 YAHOO_ENDPOINT = "https://dfyql-ro.sports.yahoo.com/v2"
 
@@ -20,7 +20,7 @@ class Yahoo:
         statuses = {player["status"] for player in players}
 
         return { 
-            "players": requests.get(PLAYERS(id)).json()["players"]["result"], 
+            "players": players, 
             "statusFilters": statuses 
         }
 
@@ -45,3 +45,8 @@ class Yahoo:
                 "supported": True,
                 "isEnabled": True,
             }), contests)
+
+YAHOO_SPORT_ID_TO_PYDFS_SPORT = {
+    "golf": { "sport": Sport.GOLF },
+    "mlb": { "sport": Sport.BASEBALL }
+}
