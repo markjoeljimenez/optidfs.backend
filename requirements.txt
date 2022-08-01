@@ -7,7 +7,7 @@ click==8.1.3
 colorama==0.4.5
 dnspython==2.2.1
 docutils==0.19
-draft-kings==3.1.0
+git+https://github.com/markjoeljimenez/draftkings_client.git
 email-validator==1.2.1
 fastapi==0.79.0
 h11==0.13.0

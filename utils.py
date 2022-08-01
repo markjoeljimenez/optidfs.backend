@@ -15,12 +15,6 @@ def transform_to_json(a):
             )
 
 
-# def merge_two_dicts(x, y):
-#     z = x.copy()   # start with x"s keys and values
-#     z.update(y)    # modifies z with y"s keys and values & returns None
-#     return z
-
-
 def transform_player(player, gameType):
     return Player(
         player["id"],
@@ -35,23 +29,6 @@ def transform_player(player, gameType):
         # player.get("minExposure"),
         # player.get("projectedOwnership")
     )
-
-
-# def get_positions(sport):
-#     if sport == 'NFL':
-#         return Positions.NFL
-
-#     if sport == 'NBA':
-#         return Positions.NBA
-
-#     if sport == 'NHL':
-#         return Positions.NHL
-
-#     if sport == 'MLB':
-#         return Positions.MLB
-
-#     if sport == 'SOCCER':
-#         return Positions.SOCCER
 
 
 # def generate_csv(lineups, draft_group_id, sport):

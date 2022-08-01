@@ -21,11 +21,11 @@ class Draftkings:
 
     def get_players(self, id):
         players = self.__get_players(id)
-        # statuses = {player["status"] for player in players}
+        statuses = {player["status"] for player in players}
 
         return { 
             "players": players, 
-            "statusFilters": [] # TODO: Get statuses
+            "statusFilters": statuses
         }
 
     def get_optimized_lineups(self, sport, players, settings):
@@ -66,7 +66,7 @@ class Draftkings:
             "salary": player["Salary"],
             "points_per_contest": player["AvgPointsPerGame"],
             "draft_positions": player["Roster Position"],
-            # "status": found_player["status"], TODO: Add this
+            "status": found_player["status"],
             "images": found_player["image_details"]
         }
 
