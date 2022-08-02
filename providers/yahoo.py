@@ -33,7 +33,7 @@ class Yahoo:
         optimizer = get_optimizer(Site.YAHOO, YAHOO_SPORT_ID_TO_PYDFS_SPORT[sport['sportId']]['sport'])
         optimizer.player_pool.load_players([transform_player(player, None) for player in transformedPlayers])
 
-        return transform_lineups(list(optimizer.optimize(n=settings["numberOfLineups"])), players)
+        return transform_lineups(list(optimizer.optimize(n=settings["numberOfLineups"])), players, [position.name for position in optimizer.settings.positions])
 
     # Utils
     def __map_contests_to_sports(self, contests):

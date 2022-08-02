@@ -67,16 +67,19 @@ def generate_csv_from_csv(lineups, sport):
 def is_captain_mode(gameType):
     return Site.DRAFTKINGS_CAPTAIN_MODE if 'Showdown' in gameType else Site.DRAFTKINGS
 
-def transform_lineups(lineups: 'list[Lineup]', players):
+def transform_lineups(lineups: 'list[Lineup]', players, positions):
     _lineups = []
-    
+
     for lineup in lineups:
-        p = [next((player for player in players if player['id'] == l._player.id), None) for l in lineup]
+        p = [next((player for i, player in enumerate(players) if player['id'] == l._player.id), None) for l in lineup]
 
         _lineups.append({
             'players': p,
             'fppg': lineup.fantasy_points_projection,
-            'salary': lineup.salary_costs
+            'salary': lineup.salary_costs,
         })
 
-    return _lineups
+    return { 
+        'lineups': _lineups, 
+        'positions': positions
+    }

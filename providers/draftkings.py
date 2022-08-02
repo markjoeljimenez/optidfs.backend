@@ -37,7 +37,7 @@ class Draftkings:
         optimizer = get_optimizer(Site.DRAFTKINGS, DRAFTKINGS_SPORT_ID_TO_PYDFS_SPORT[sport['sportId']]['sport'])
         optimizer.player_pool.load_players([transform_player(player, None) for player in transformedPlayers])
 
-        return transform_lineups(list(optimizer.optimize(n=settings["numberOfLineups"])), players)
+        return transform_lineups(list(optimizer.optimize(n=settings["numberOfLineups"])), players, [position.name for position in optimizer.settings.positions])
 
     # Utils
     def __transform_sports(self):
