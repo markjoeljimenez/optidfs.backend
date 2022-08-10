@@ -24,16 +24,8 @@ class Yahoo:
             "statusFilters": statuses 
         }
 
-    def get_optimized_lineups(self, sport, players, settings):
-        transformedPlayers = players
-
-        if (len(settings["statusFilters"])):
-            transformedPlayers = filter(lambda player: player["status"] in settings["statusFilters"] , players)
-
-        optimizer = get_optimizer(Site.YAHOO, YAHOO_SPORT_ID_TO_PYDFS_SPORT[sport['sportId']]['sport'])
-        optimizer.player_pool.load_players([transform_player(player, None) for player in transformedPlayers])
-
-        return transform_lineups(list(optimizer.optimize(n=settings["numberOfLineups"])), players, [position.name for position in optimizer.settings.positions])
+    def get_optimized_lineups(self, sport):
+        return get_optimizer(Site.YAHOO, YAHOO_SPORT_ID_TO_PYDFS_SPORT[sport['sportId']]['sport'])
 
     # Utils
     def __map_contests_to_sports(self, contests):

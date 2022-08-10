@@ -1,16 +1,9 @@
-# from os import environ
-# import csv
-# import pandas as pd
-# from flask import Flask, request, session, Response
-# from flask_restful import Api, Resource, reqparse
-# from flask_cors import CORS
-# from pydfs_lineup_optimizer import get_optimizer, Site, Sport, Player, LineupOptimizerException, JSONLineupExporter, TeamStack, PositionsStack, PlayersGroup, Stack
-# from draft_kings.client import contests
-# from utils import transform_player, generate_csv_from_csv, get_available_players, SPORT_ID_TO_PYDFS_SPORT
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from providers.draftkings import Draftkings
 from providers.yahoo import Yahoo
+from pydfs_lineup_optimizer import exceptions
+from utils import transform_player, transform_lineups
 
 app = FastAPI()
 
@@ -62,7 +55,23 @@ async def optimize(request: Request):
     sport = body['sport']
     settings = body['settings']
 
-    return providers.get(provider).get_optimized_lineups(sport, players, settings)
+    transformedPlayers = players
+
+    try:
+        if (len(settings["statusFilters"])):
+                transformedPlayers = filter(lambda player: player["status"] in settings["statusFilters"], players)
+
+        optimizer = providers.get(provider).get_optimizer(sport)
+        optimizer.player_pool.load_players([transform_player(player, None) for player in transformedPlayers])
+
+        if (len(settings["lockedPlayers"])):
+                for player in settings["lockedPlayers"]:
+                    optimizer.player_pool.lock_player(player)
+
+        return transform_lineups(list(optimizer.optimize(n=settings["numberOfLineups"])), players, [position.name for position in optimizer.settings.positions])
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=e.__dict__["message"])
+
 
 # @ application.route("/players", methods=["GET", "POST"])
 # def get_players():
