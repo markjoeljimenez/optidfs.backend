@@ -68,6 +68,10 @@ async def optimize(request: Request):
                 for player in settings["lockedPlayers"]:
                     optimizer.player_pool.lock_player(player)
 
+        if (len(settings["excludedPlayers"])):
+                for player in settings["excludedPlayers"]:
+                    optimizer.player_pool.remove_player(player)
+
         return transform_lineups(list(optimizer.optimize(n=settings["numberOfLineups"])), players, [position.name for position in optimizer.settings.positions])
     except Exception as e:
         raise HTTPException(status_code=500, detail=e.__dict__["message"])
