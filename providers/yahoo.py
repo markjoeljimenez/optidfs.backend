@@ -24,7 +24,7 @@ class Yahoo:
             "statusFilters": statuses 
         }
 
-    def get_optimized_lineups(self, sport):
+    def get_optimizer(self, sport):
         return get_optimizer(Site.YAHOO, YAHOO_SPORT_ID_TO_PYDFS_SPORT[sport['sportId']]['sport'])
 
     # Utils

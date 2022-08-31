@@ -2,7 +2,6 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from providers.draftkings import Draftkings
 from providers.yahoo import Yahoo
-from pydfs_lineup_optimizer import exceptions
 from utils import transform_player, transform_lineups
 
 app = FastAPI()
@@ -74,7 +73,8 @@ async def optimize(request: Request):
 
         return transform_lineups(list(optimizer.optimize(n=settings["numberOfLineups"])), players, [position.name for position in optimizer.settings.positions])
     except Exception as e:
-        raise HTTPException(status_code=500, detail=e.__dict__["message"])
+        raise HTTPException(status_code=500, detail=e.__str__())
+
 
 
 # @ application.route("/players", methods=["GET", "POST"])
