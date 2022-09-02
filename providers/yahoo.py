@@ -40,5 +40,6 @@ class Yahoo:
 
 YAHOO_SPORT_ID_TO_PYDFS_SPORT = {
     "golf": { "sport": Sport.GOLF },
-    "mlb": { "sport": Sport.BASEBALL }
+    "mlb": { "sport": Sport.BASEBALL },
+    "nfl": { "sport": Sport.FOOTBALL }
 }
