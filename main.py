@@ -71,7 +71,12 @@ async def optimize(request: Request):
                 for player in settings["excludedPlayers"]:
                     optimizer.player_pool.remove_player(player)
 
-        return transform_lineups(list(optimizer.optimize(n=settings["numberOfLineups"])), players, [position.name for position in optimizer.settings.positions])
+        max_exposure = settings["maximumExposure"] if "maximumExposure" in settings else None
+
+        return transform_lineups(
+            list(optimizer.optimize(n=settings["numberOfLineups"], max_exposure=max_exposure)), 
+            players, 
+            [position.name for position in optimizer.settings.positions])
     except Exception as e:
         raise HTTPException(status_code=500, detail=e.__str__())
 
