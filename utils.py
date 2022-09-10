@@ -24,7 +24,9 @@ def transform_player(player, gameType):
         player["team"],
         float(player["salary"]),
         float(player["fppg"]),
-        # player.get("status") == "O",
+        # player["status"] == "O",
+        False,
+        player["maxExposure"] if "maxExposure" in player else None
         # None,
         # player.get("minExposure"),
         # player.get("projectedOwnership")
