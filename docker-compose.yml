@@ -1,0 +1,8 @@
+version: 2.10.2
+name: optidfs-backend
+services:
+  optidfs-backend:
+    container_name: backend
+    image: optidfs-backend
+    ports:
+      - "8000:8000"
