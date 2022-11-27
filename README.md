@@ -6,6 +6,10 @@
         python -m venv env
     ```
 
+    ```python3
+        python3 -m venv env
+    ```
+
 2.  Activate environment
 
     ```python
@@ -21,8 +25,8 @@
         pip install -r requirements.txt
     ```
 
-4.  Set Flask and run virtual environment
+4.  Run virtual environment
 
         ```python
-            flask run
+            uvicorn main:app
         ```
