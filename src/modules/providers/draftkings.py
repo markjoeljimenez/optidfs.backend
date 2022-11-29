@@ -2,7 +2,7 @@ import pandas as pd
 import requests
 from draft_kings import Client, data
 from pydfs_lineup_optimizer import Site, Sport, get_optimizer
-from utils import transform_lineups, transform_player, transform_to_json
+from modules.utils import transform_lineups, transform_player, transform_to_json
 
 BASE_URL = 'https://www.draftkings.com'
 API_BASE_URL = 'https://api.draftkings.com'

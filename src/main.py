@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from providers.draftkings import Draftkings
-from providers.yahoo import Yahoo
-from utils import transform_player, transform_lineups
+from modules.providers.draftkings import Draftkings
+from modules.providers.yahoo import Yahoo
+from modules.utils import transform_player, transform_lineups
 
 app = FastAPI()
 

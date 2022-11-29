@@ -1,6 +1,6 @@
 from pydfs_lineup_optimizer import Site, Sport, get_optimizer
 import requests
-from utils import remove_duplicates, transform_lineups, transform_player
+from modules.utils import remove_duplicates, transform_lineups, transform_player
 
 YAHOO_ENDPOINT = "https://dfyql-ro.sports.yahoo.com/v2"
 
