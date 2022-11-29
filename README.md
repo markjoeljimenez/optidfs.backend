@@ -27,6 +27,6 @@
 
 4.  Run virtual environment
 
-        ```python
-            uvicorn main:app
-        ```
+    ```python
+        uvicorn main:app
+    ```

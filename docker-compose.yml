@@ -1,8 +1,12 @@
-version: 2.10.2
-name: optidfs-backend
+version: '3.4'
+
+name: optidfs
 services:
-  optidfs-backend:
-    container_name: backend
+  optimizer:
+    container_name: optimizer
     image: optidfs-backend
+    build:
+      context: .
+      dockerfile: ./Dockerfile
     ports:
-      - "8000:8000"
+      - 8000:8000

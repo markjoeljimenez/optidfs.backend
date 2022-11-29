@@ -5,11 +5,42 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
+			"name": "Python: Remote Attach",
+			"type": "python",
+			"request": "attach",
+			"port": 5678,
+			"host": "localhost",
+			"pathMappings": [
+				{
+					"localRoot": "${workspaceFolder}/src",
+					"remoteRoot": "/usr/src/app"
+				}
+			]
+		},
+		{
+			"name": "Docker: Python - FastAPI",
+			"type": "docker",
+			"request": "launch",
+			"preLaunchTask": "docker-run: debug",
+			"python": {
+				"pathMappings": [
+					{
+						"localRoot": "${workspaceFolder}/src",
+						"remoteRoot": "/usr/src/app"
+					}
+				],
+				"projectType": "fastapi"
+			}
+		},
+		{
 			"name": "Python: FastAPI",
 			"type": "python",
 			"request": "launch",
 			"module": "uvicorn",
-			"args": ["main:app", "--reload"],
+			"args": [
+				"main:app",
+				"--reload"
+			],
 			"jinja": true,
 			"justMyCode": true
 		}
